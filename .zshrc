@@ -3,12 +3,14 @@
 
 # Path to your oh-my-zsh installation.
 export ZSH=/home/megger/.oh-my-zsh
+export GOPATH=$HOME/go
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_VIRTUALENV=virtualenv-3
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3.6
 export VIRTUALENVWRAPPER_VIRTUALENV_CLONE=/usr/bin/virtualenv-clone-3.6
 source /usr/bin/virtualenvwrapper.sh
 export GPG_TTY=$(tty)
+export PATH="$PATH:$GOPATH/bin"
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
@@ -21,6 +23,8 @@ alias ....="cd ../../.."
 alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 alias python="python3"
+alias getid="uuidgen | tr '[:upper:]' '[:lower:]' | lolcat"
+
 
 # Set list of themes to load
 # Setting this variable when ZSH_THEME=random
