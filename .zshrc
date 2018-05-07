@@ -8,6 +8,7 @@ export VIRTUALENVWRAPPER_VIRTUALENV=virtualenv-3
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3.6
 export VIRTUALENVWRAPPER_VIRTUALENV_CLONE=/usr/bin/virtualenv-clone-3.6
 source /usr/bin/virtualenvwrapper.sh
+export GPG_TTY=$(tty)
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
