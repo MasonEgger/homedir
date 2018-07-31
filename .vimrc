@@ -1,6 +1,7 @@
 set cmdheight=2
 set hlsearch
 set number
+set colorcolumn=80
 colorscheme zellner
 syntax on
 execute pathogen#infect()
