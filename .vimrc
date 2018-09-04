@@ -1,12 +1,15 @@
 set cmdheight=2
+set backspace=2
 set hlsearch
 set number
-set colorcolumn=80
+set ruler
+set cc=80
+set expandtab
+set ts=4
 colorscheme zellner
 syntax on
 execute pathogen#infect()
 autocmd BufWritePost *.py call Flake8()
+filetype plugin on
 autocmd vimenter * NERDTree
-autocmd FileType python set expandtab|set ts=4
-autocmd FileType go set noexpandtab|set tabstop=4
 let NERDTreeIgnore = ['\.pyc$']
