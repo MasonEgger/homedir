@@ -2,7 +2,7 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH=/home/megger/.oh-my-zsh
+export ZSH=/home/`whoami`/.oh-my-zsh
 export GOPATH=$HOME/go
 export GPG_TTY=$(tty)
 export PATH=$PATH:/usr/local/go/bin
