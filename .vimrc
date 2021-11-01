@@ -8,8 +8,3 @@ set expandtab
 set ts=4
 colorscheme zellner
 syntax on
-execute pathogen#infect()
-autocmd BufWritePost *.py call Flake8()
-filetype plugin on
-autocmd vimenter * NERDTree
-let NERDTreeIgnore = ['\.pyc$']
