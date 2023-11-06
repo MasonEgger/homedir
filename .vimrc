@@ -6,5 +6,5 @@ set ruler
 set cc=80
 set expandtab
 set ts=4
-colorscheme zellner
+colorscheme slate
 syntax on
