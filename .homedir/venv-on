@@ -1,0 +1,3 @@
+#!/bin/bash
+
+source $(git rev-parse --show-toplevel)/venv/bin/activate

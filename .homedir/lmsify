@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Converts the specified GFM file to HTML, formatted as HTML
+# for publication to the LMS, and copies it to the clipboard.
+
+if [ -z "${1}" ]; then
+	echo "Input file omitted--no soup for you!"
+	exit 1
+fi
+
+lessonmd < "${1}" | pbcopy
