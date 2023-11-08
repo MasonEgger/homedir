@@ -23,8 +23,8 @@ alias ......="cd ../../../../.."
 alias python="python3"
 alias uuid="uuidgen | tr '[:upper:]' '[:lower:]' | lolcat"
 alias django="python manage.py"
-alias venv-on="source $(git rev-parse --show-toplevel)/venv/bin/activate"
-alias cdr="cd $(git rev-parse --show-toplevel)"
+alias venv-on='source $(git rev-parse --show-toplevel)/venv/bin/activate'
+alias cdr='cd $(git rev-parse --show-toplevel)'
 
 
 # Set list of themes to pick from when loading at random
