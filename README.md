@@ -9,3 +9,6 @@ $ mv homedir/.[Xa-z]* homedir/* .
 $ rmdir homedir
 ```
 
+## Claude.md
+
+Claude.md crafted by myself, and shamelessly taken from [harperreed](https://github.com/harperreed/dotfiles/tree/master/.claude)
