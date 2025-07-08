@@ -1,0 +1,38 @@
+#!/usr/bin/env -S uv run --script
+"""Count words in a file, excluding Markdown code blocks."""
+
+import sys
+import re
+
+def count_words(filepath):
+    """Count words in file, excluding content within ``` code blocks."""
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+        
+        # Remove code blocks (everything between ``` markers)
+        # Using DOTALL flag to match across newlines
+        content_without_code = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+        
+        # Split into words and count non-empty strings
+        words = content_without_code.split()
+        return len(words)
+    
+    except FileNotFoundError:
+        print(f"Error: File '{filepath}' not found.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        sys.exit(1)
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: wordcount <file>")
+        sys.exit(1)
+    
+    filepath = sys.argv[1]
+    word_count = count_words(filepath)
+    print(f"{word_count}")
+
+if __name__ == "__main__":
+    main()
