@@ -8,7 +8,7 @@ echo "  lmsify <file.md>    - Convert Markdown to HTML for LMS (copies to clipbo
 echo "  wordcount <file>    - Count words in file, excluding Markdown code blocks"
 echo ""
 echo "Other useful aliases from .zshrc:"
-echo "  getid              - Generate a lowercase UUID with colors"
+echo "  uuid               - Generate a lowercase UUID with colors"
 echo "  cdr                - Navigate to git repository root"
 echo "  venv-on            - Activate Python virtual environment at git root"
 echo "  django             - Shortcut for 'python manage.py'"

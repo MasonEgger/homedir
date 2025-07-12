@@ -6,4 +6,4 @@ Make sure and separate each prompt section. Use markdown. Each prompt should be 
 
 Store the plan in @plan.md. Also create a @todo.md to keep state.
 
-The spec is in the file called:
+The spec is in the file called $ARGUMENT
