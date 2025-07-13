@@ -1,0 +1,42 @@
+---
+# Package Management Tasks
+- name: Update Homebrew (macOS)
+  homebrew:
+    update_homebrew: yes
+  when: ansible_os_family == "Darwin"
+  tags: packages
+
+- name: Install packages via Homebrew (macOS)
+  homebrew:
+    name: "{{ brew_packages }}"
+    state: present
+  when: ansible_os_family == "Darwin"
+  tags: packages
+
+- name: Update apt cache (Ubuntu/Debian)
+  apt:
+    update_cache: yes
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: packages
+
+- name: Install packages via apt (Ubuntu/Debian)
+  apt:
+    name: "{{ apt_packages }}"
+    state: present
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: packages
+
+# Install uv Python package manager
+- name: Check if uv is installed
+  command: which uv
+  register: uv_check
+  ignore_errors: yes
+  changed_when: false
+  tags: packages
+
+- name: Install uv Python package manager
+  shell: curl -LsSf https://astral.sh/uv/install.sh | sh
+  when: uv_check.rc != 0 and not ansible_check_mode
+  tags: packages

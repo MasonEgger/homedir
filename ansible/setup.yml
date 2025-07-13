@@ -1,0 +1,67 @@
+---
+- name: Homedir Setup - Dotfiles and Package Management
+  hosts: localhost
+  gather_facts: yes
+  become: false
+
+  # Variables are now loaded automatically from group_vars/all.yml
+
+  tasks:
+    - name: Display configuration
+      debug:
+        msg:
+          - "=== Homedir Setup - Ansible Version ==="
+          - "Interactive: {{ interactive }}"
+          - "Check mode: {{ ansible_check_mode }}"
+          - "Exclude .claude: {{ exclude_claude }}"
+          - "Backup directory: {{ backup_dir }}"
+          - "OS Family: {{ ansible_os_family }}"
+      tags: always
+
+    - name: Confirm installation (interactive mode)
+      pause:
+        prompt: "Proceed with installation? [y/N]"
+      register: confirmation
+      when: interactive and not ansible_check_mode
+      tags: always
+
+    - name: Exit if user declined
+      fail:
+        msg: "Installation cancelled by user"
+      when: interactive and not ansible_check_mode and confirmation.user_input | lower != 'y'
+      tags: always
+
+    # Include modular tasks
+    - name: Include package management tasks
+      include_tasks: tasks/packages.yml
+      tags: packages
+
+    - name: Include core dotfiles tasks
+      include_tasks: tasks/dotfiles.yml
+      tags: dotfiles
+
+    - name: Include .claude directory tasks
+      include_tasks: tasks/claude.yml
+      when: not exclude_claude
+      tags: claude
+
+    - name: Include .homedir directory tasks
+      include_tasks: tasks/homedir.yml
+      tags: homedir
+
+    # Summary
+    - name: Installation summary
+      debug:
+        msg:
+          - "=== Installation Summary ==="
+          - "OS: {{ ansible_os_family }}"
+          - "Packages installed: {{ 'Yes' if 'packages' in ansible_run_tags else 'Skipped' }}"
+          - "Core dotfiles installed: {{ 'Yes' if 'dotfiles' in ansible_run_tags else 'Skipped' }}"
+          - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags and not exclude_claude else 'Skipped' }}"
+          - "Homedir directory installed: {{ 'Yes' if 'homedir' in ansible_run_tags else 'Skipped' }}"
+          - "Backup directory: {{ backup_dir if not ansible_check_mode else 'N/A (check mode)' }}"
+          - ""
+          - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
+          - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
+          - "{{ '- Check that custom commands in ~/.homedir/ work as expected' if not ansible_check_mode else '' }}"
+      tags: always

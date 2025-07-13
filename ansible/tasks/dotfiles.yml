@@ -1,0 +1,57 @@
+---
+# Core Dotfiles Installation Tasks (excluding .claude and .homedir)
+- name: Create backup directory
+  file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: '0755'
+  tags: dotfiles
+
+- name: Find all files in dotfiles directory
+  find:
+    paths: "{{ dotfiles_dir }}"
+    patterns: "*"
+    file_type: any
+    hidden: yes
+  register: all_files
+  tags: dotfiles
+
+- name: Filter core dotfiles to install (excluding .claude and .homedir)
+  set_fact:
+    core_dotfiles_to_install: "{{ all_files.files | 
+      selectattr('path', 'match', '.*/(\\.[Xa-z].*|[^.].*)$') |
+      rejectattr('path', 'match', '.*/\\.git(/.*)?$') |
+      rejectattr('path', 'match', '.*/ansible(/.*)?$') |
+      rejectattr('path', 'match', '.*/(README\\.md|CLAUDE\\.md|setup\\.sh|setup\\.yml|ansible\\.cfg|hosts|requirements\\.yml|plan\\.md)$') |
+      rejectattr('path', 'match', '.*/\\.claude(/.*)?$') |
+      rejectattr('path', 'match', '.*/\\.homedir(/.*)?$') |
+      map(attribute='path') | map('basename') | list }}"
+  tags: dotfiles
+
+- name: Display core dotfiles to install
+  debug:
+    msg:
+      - "Core dotfiles to install:"
+      - "{{ core_dotfiles_to_install }}"
+  tags: dotfiles
+
+- name: Backup existing core dotfiles
+  copy:
+    src: "{{ ansible_user_dir }}/{{ item }}"
+    dest: "{{ backup_dir }}/{{ item }}"
+    backup: no
+    remote_src: yes
+  with_items: "{{ core_dotfiles_to_install }}"
+  when: (ansible_user_dir + '/' + item) is exists
+  ignore_errors: yes
+  tags: dotfiles
+
+- name: Install core dotfiles
+  copy:
+    src: "{{ dotfiles_dir }}/{{ item }}"
+    dest: "{{ ansible_user_dir }}/{{ item }}"
+    backup: no
+    mode: preserve
+  with_items: "{{ core_dotfiles_to_install }}"
+  register: core_dotfiles_installed
+  tags: dotfiles
