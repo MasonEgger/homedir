@@ -78,8 +78,8 @@ $ ./setup.sh              # Default: Prompts for confirmation before installing
 
 | Command | Description | Arguments | Usage Example |
 |---------|-------------|-----------|---------------|
-| `lmsify` | Convert GitHub Flavored Markdown to HTML for LMS publication (copies to clipboard) | `<file.md>` - Markdown file to convert | `lmsify lesson.md` |
-| `wordcount` | Count words in file, excluding Markdown code blocks | `<file>` - File to count words in | `wordcount README.md` |
+| `lmsify` | Convert GitHub Flavored Markdown to HTML for LMS publication (copies to clipboard using `pbcopy`) | `<file.md>` - Markdown file to convert | `lmsify lesson.md` |
+| `wordcount` | Count words in files/directories, excluding Markdown code blocks | `<path> [options]` - File or directory to process with various options | `wordcount README.md` or `wordcount . -r -f json` |
 | `my-tools` | Display help for available custom tools | None | `my-tools` |
 
 ### Claude Settings (`.claude/`)
@@ -148,7 +148,7 @@ $ ./setup.sh              # Default: Prompts for confirmation before installing
 
 - The `uuid` alias requires `lolcat` to be installed for colorful output
 - The `lmsify` command requires `lessonmd` tool to be installed
-- The `wordcount` script uses `uv` for Python script execution
+- The `wordcount` script uses `uv` for Python script execution and supports multiple output formats (text, JSON, CSV)
 - All custom scripts in `.homedir/` are executable and added to PATH
 
 ## Contributing

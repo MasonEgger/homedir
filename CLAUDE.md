@@ -51,7 +51,11 @@ The setup script features:
 ### Utilities
 - `uuid` - Generate a lowercase UUID with colorful output (requires `lolcat`)
 - `lmsify <file.md>` - Convert GitHub Flavored Markdown to HTML for LMS publication (requires `lessonmd` tool)
-- `wordcount <file>` - Count words in file, excluding Markdown code blocks (uses `uv` for Python script execution)
+- `wordcount <file>` - Count words in file, excluding Markdown code blocks. Supports various options:
+  - `-r, --recursive` - Process directories recursively  
+  - `-f, --format {text|json|csv}` - Output format
+  - `-o, --output FILE` - Save output to file
+  - `--no-exclude-code-blocks` - Count words in code blocks
 - `my-tools` - Display help for available custom tools
 
 ## Development Environment
@@ -59,7 +63,7 @@ The setup script features:
 ### Shell Configuration
 - **Shell**: Zsh with Oh My Zsh (geoffgarside theme)
 - **Plugins**: git
-- **Path additions**: `~/.homedir`, Java OpenJDK 20.0.2 (`~/OpenJDK/jdk-20.0.2.jdk/Contents/Home`), pipx binaries (`~/.local/bin`)
+- **Path additions**: `~/.homedir`, Java OpenJDK 20.0.2 (`~/OpenJDK/jdk-20.0.2.jdk/Contents/Home`)
 - **Integrations**: `thefuck` command correction tool, GPG TTY export
 
 ### Editor Configuration
@@ -82,8 +86,6 @@ The setup script features:
 ```
 .
 ├── .homedir/                    # Custom utility scripts
-│   ├── .claude/                 # Claude-specific settings
-│   │   └── settings.local.json  # Local permissions config
 │   ├── lmsify                   # Markdown to HTML converter (bash script)
 │   ├── my-tools                 # Tool help display (bash script)
 │   └── wordcount                # Word count utility (Python script using uv)
@@ -103,6 +105,36 @@ When making changes to this repository:
 3. Update README.md for user-facing changes
 4. Be mindful that this repository is used across multiple machines - avoid machine-specific configurations
 5. Never commit sensitive information (API keys, tokens)
+
+## Commands for Development
+
+### Testing and Validation
+To test changes to utility scripts and configurations:
+```bash
+# Test utility scripts after modification
+.homedir/my-tools                    # Should display help text
+.homedir/wordcount README.md         # Should count words (returns just number for single files)
+.homedir/wordcount . -r              # Recursively count words in directory
+.homedir/lmsify test.md              # Should convert markdown (requires lessonmd)
+
+# Verify aliases work after .zshrc changes
+source ~/.zshrc
+uuid                                 # Should generate colored UUID (requires lolcat)
+cdr                                  # Should navigate to git repository root
+venv-on                              # Should activate .venv if it exists
+
+# Test configuration files
+vim                                  # Should show line numbers, 80-char column marker
+tmux                                 # Should use magenta status bar with function key bindings
+```
+
+### Repository Maintenance
+```bash
+# Keep repository in sync after setup
+cd ~/homedir
+git pull origin main
+./setup.sh  # Re-run to update files
+```
 
 ## Common Tasks
 
@@ -131,6 +163,20 @@ When making changes to this repository:
   - `uv` - For `wordcount` Python script execution
   - `thefuck` - For command correction
   - Java OpenJDK 20.0.2 - If using Java development
+
+## Architecture Notes
+
+### Setup Script Behavior
+The `setup.sh` script preserves the cloned repository in `~/homedir/` after installation. This allows for:
+- Easy updates via `git pull` and re-running setup
+- Version control tracking of dotfile changes
+- Rollback capabilities if needed
+
+### Script Execution Model
+- Shell scripts in `.homedir/` are made executable automatically during setup
+- Python scripts use `uv` for execution (e.g., `wordcount` uses `#!/usr/bin/env -S uv run --script`)
+- All scripts assume they're run from any directory (use absolute paths internally)
+- The `wordcount` script supports multiple output formats (text, JSON, CSV) and advanced options for markdown processing
 
 ## Claude-Specific Settings
 
