@@ -144,7 +144,12 @@ git pull origin main
 3. Test by sourcing: `source ~/.zshrc`
 
 ### Adding a New Utility Script
-1. Create the script in `.homedir/`
+**Always write new homedir scripts in Python following the guidelines in `~/.claude/docs/python.md`:**
+1. Create Python script in `.homedir/` with PEP 723 inline metadata:
+   - Use `#!/usr/bin/env -S uv run --script` shebang
+   - Include `# /// script` metadata block with dependencies
+   - Follow modern Pythonic style with type hints and docstrings
+   - Use `ruff` formatting and `mypy --strict` type checking
 2. Make it executable: `chmod +x .homedir/script-name`
 3. The script will be automatically available in PATH after setup
 4. Update `my-tools` script to include the new tool in help output
