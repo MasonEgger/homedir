@@ -8,21 +8,51 @@ This repository contains my personal shell configurations, editor settings, and 
 
 ## Setup
 
-### Recommended (Automated Setup with Backups)
+### Recommended (Ansible-based Setup with Package Management)
 
 ```bash
 $ cd
 $ git clone https://github.com/MasonEgger/homedir.git
 $ cd homedir
-$ ./setup.sh              # Default: Prompts for confirmation before installing
+$ ansible-playbook ansible/setup.yml    # Install everything with confirmation
 ```
 
-**Setup Script Options:**
-- `./setup.sh -i` - Interactive mode: Confirm each file individually
-- `./setup.sh -n` - Dry-run mode: Show what would be done without making changes
-- `./setup.sh -x` - Exclude .claude directory from installation
-- `./setup.sh -v` - Verbose output
-- `./setup.sh -b DIR` - Custom backup directory
+**Modular Installation Options:**
+```bash
+# Install specific components
+ansible-playbook ansible/setup.yml --tags packages     # Only install packages
+ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles  
+ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
+ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
+
+# Combine multiple components
+ansible-playbook ansible/setup.yml --tags packages,dotfiles
+ansible-playbook ansible/setup.yml --tags claude,homedir
+```
+
+**Check Mode and Preview Options:**
+```bash
+# See what would change without making changes
+ansible-playbook ansible/setup.yml --check
+ansible-playbook ansible/setup.yml --tags dotfiles --check
+
+# Show detailed before/after diffs of file changes
+ansible-playbook ansible/setup.yml --check --diff
+ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
+```
+
+**Additional Options:**
+- `--extra-vars "interactive=true"` - Interactive mode: Confirm installation
+- `--extra-vars "exclude_claude=true"` - Exclude .claude directory from installation  
+- `--extra-vars "verbose=true"` - Verbose output
+- Options can be combined: `ansible-playbook ansible/setup.yml --extra-vars "interactive=true exclude_claude=true"`
+
+**Features:**
+- **Modular installation**: Install only the components you need (packages, dotfiles, claude, homedir)
+- **Cross-platform package management**: Automatically installs development tools via Homebrew (macOS) or apt (Ubuntu/Debian)
+- **Check mode support**: Preview changes before making them with `--check` and `--diff`
+- **Automatic backups**: Creates timestamped backups of existing files
+- **Idempotent**: Safe to run multiple times, only makes necessary changes
 
 ## What's Included
 
@@ -136,20 +166,33 @@ $ ./setup.sh              # Default: Prompts for confirmation before installing
 │   ├── lmsify                    # Markdown to HTML converter
 │   ├── my-tools                  # Tool help display
 │   └── wordcount                 # Word count utility
+├── ansible/                      # Ansible automation setup
+│   ├── setup.yml                 # Main Ansible playbook (orchestration only)
+│   ├── group_vars/               # Variable definitions
+│   │   └── all.yml               # Package lists and configuration
+│   ├── tasks/                    # Modular task definitions
+│   │   ├── packages.yml          # Package management tasks
+│   │   ├── dotfiles.yml          # Core dotfiles installation
+│   │   ├── claude.yml            # Claude directory installation
+│   │   └── homedir.yml           # Homedir scripts installation
+│   ├── ansible.cfg               # Ansible configuration
+│   ├── hosts                     # Localhost inventory
+│   ├── requirements.yml          # External role dependencies
+│   └── README.md                 # Ansible usage documentation
 ├── .tmux.conf                    # Tmux terminal multiplexer configuration
 ├── .vimrc                        # Vim configuration
 ├── .zshrc                        # Zsh configuration with aliases
 ├── CLAUDE.md                     # Instructions for Claude AI assistant
-├── README.md                     # This file
-└── setup.sh                      # Automated setup script
+└── README.md                     # This file
 ```
 
 ## Notes
 
-- The `uuid` alias requires `lolcat` to be installed for colorful output
-- The `lmsify` command requires `lessonmd` tool to be installed
+- **Package Dependencies**: The Ansible setup automatically installs required packages including `lolcat`, development tools, and `uv`
+- The `lmsify` command requires `lessonmd` tool to be installed (not included in automated setup)
 - The `wordcount` script uses `uv` for Python script execution and supports multiple output formats (text, JSON, CSV)
 - All custom scripts in `.homedir/` are executable and added to PATH
+- **Ansible Requirement**: Ensure Ansible is installed (`pip install ansible` or `brew install ansible`)
 
 ## Contributing
 

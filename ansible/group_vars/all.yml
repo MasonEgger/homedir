@@ -1,0 +1,71 @@
+---
+# Package definitions for homedir setup
+# These variables are automatically loaded for all hosts
+
+# macOS packages installed via Homebrew
+brew_packages:
+  - colima
+  - curl
+  - docker
+  - docker-buildx
+  - docker-compose
+  - doctl
+  - ffmpeg
+  - git
+  - gh
+  - gnupg
+  - go
+  - gradle
+  - httpie
+  - jq
+  - kubernetes-cli
+  - lolcat
+  - lychee
+  - maven
+  - node
+  - python@3.10
+  - qemu
+  - ripgrep
+  - ruby
+  - rust
+  - temporal
+  - thefuck
+  - vale
+  - yarn
+
+# Ubuntu/Debian packages installed via apt
+apt_packages:
+  - curl
+  - docker.io
+  - docker-compose
+  - ffmpeg
+  - git
+  - gh
+  - gnupg
+  - golang-go
+  - gradle
+  - httpie
+  - jq
+  - kubectl
+  - lolcat
+  - maven
+  - nodejs
+  - python3
+  - python3-pip
+  - qemu
+  - ripgrep
+  - ruby
+  - rustc
+  - yarn
+
+# Default configuration options
+# These can be overridden with --extra-vars
+interactive: false
+exclude_claude: false
+verbose: false
+
+# Backup directory with timestamp
+backup_dir: "{{ ansible_user_dir }}/.homedir-backup-{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}"
+
+# Root directory for dotfiles (parent of ansible directory)
+dotfiles_dir: "{{ playbook_dir | dirname }}"

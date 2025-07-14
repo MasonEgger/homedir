@@ -1,0 +1,63 @@
+---
+# .claude Directory Installation Tasks
+- name: Find .claude directory files
+  find:
+    paths: "{{ dotfiles_dir }}/.claude"
+    patterns: "*"
+    file_type: any
+    hidden: yes
+    recurse: yes
+  register: claude_files
+  when: (dotfiles_dir + '/.claude') is exists
+  tags: claude
+
+- name: Filter .claude files to install
+  set_fact:
+    claude_files_to_install: "{{ claude_files.files | 
+      map(attribute='path') | 
+      map('regex_replace', '^' + dotfiles_dir + '/', '') | 
+      list if claude_files.files is defined else [] }}"
+  tags: claude
+
+- name: Display .claude files to install
+  debug:
+    msg:
+      - ".claude files to install:"
+      - "{{ claude_files_to_install }}"
+  when: claude_files_to_install | length > 0
+  tags: claude
+
+- name: Create .claude directory structure
+  file:
+    path: "{{ ansible_user_dir }}/{{ item | dirname }}"
+    state: directory
+    mode: '0755'
+  with_items: "{{ claude_files_to_install }}"
+  when: 
+    - claude_files_to_install | length > 0
+    - item | dirname != "."
+  tags: claude
+
+- name: Backup existing .claude files
+  copy:
+    src: "{{ ansible_user_dir }}/{{ item }}"
+    dest: "{{ backup_dir }}/{{ item }}"
+    backup: no
+    remote_src: yes
+  with_items: "{{ claude_files_to_install }}"
+  when: 
+    - claude_files_to_install | length > 0
+    - (ansible_user_dir + '/' + item) is exists
+  ignore_errors: yes
+  tags: claude
+
+- name: Install .claude files
+  copy:
+    src: "{{ dotfiles_dir }}/{{ item }}"
+    dest: "{{ ansible_user_dir }}/{{ item }}"
+    backup: no
+    mode: preserve
+  with_items: "{{ claude_files_to_install }}"
+  when: claude_files_to_install | length > 0
+  register: claude_files_installed
+  tags: claude
