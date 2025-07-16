@@ -114,7 +114,6 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 | File | Description | Contents |
 |------|-------------|----------|
 | `settings.json` | Global Claude configuration | Basic settings for Claude behavior |
-| `settings.local.json` | Local Claude permissions configuration | Allows specific bash commands: `ls`, `grep`, `find` |
 | `CLAUDE.md` | Claude-specific documentation | Detailed instructions for Claude AI assistant (separate from root CLAUDE.md) |
 | `commands/` | Directory containing Claude command definitions | Custom commands and workflows |
 | `docs/` | Additional Claude documentation | Extended documentation and examples |
@@ -157,8 +156,7 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 │   │   └── setup.md              # Python project configuration
 │   ├── docs/                     # Additional Claude documentation
 │   │   └── python.md             # Python development guidelines
-│   ├── settings.json             # Global Claude settings
-│   └── settings.local.json       # Local permissions config
+│   └── settings.json             # Global Claude settings
 ├── .homedir/                     # Custom utility scripts
 │   ├── lmsify                    # Markdown to HTML converter
 │   ├── my-tools                  # Tool help display

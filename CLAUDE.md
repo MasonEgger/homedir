@@ -188,9 +188,3 @@ The Ansible playbook preserves the cloned repository in `~/homedir/` after insta
 - All scripts assume they're run from any directory (use absolute paths internally)
 - The `wordcount` script supports multiple output formats (text, JSON, CSV) and advanced options for markdown processing
 
-## Claude-Specific Settings
-
-The `.claude/settings.local.json` file contains permissions for specific bash commands that Claude can execute:
-- `ls`, `grep`, `find`
-
-This ensures Claude can help with file discovery and permission management while maintaining security.
