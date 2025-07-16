@@ -13,7 +13,7 @@ This is a personal dotfiles/homedir configuration repository used to quickly set
 cd
 git clone https://github.com/MasonEgger/homedir.git
 cd homedir
-ansible-playbook ansible/setup.yml    # Install everything with confirmation
+ansible-playbook ansible/setup.yml    # Install everything
 ```
 
 **Modular Installation Options:**
@@ -190,7 +190,7 @@ The Ansible playbook preserves the cloned repository in `~/homedir/` after insta
 
 ## Claude-Specific Settings
 
-The `.homedir/.claude/settings.local.json` file contains permissions for specific bash commands that Claude can execute:
-- `find`, `ls`, `chmod`, `my-tools`
+The `.claude/settings.local.json` file contains permissions for specific bash commands that Claude can execute:
+- `ls`, `grep`, `find`
 
 This ensures Claude can help with file discovery and permission management while maintaining security.
