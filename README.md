@@ -8,13 +8,13 @@ This repository contains my personal shell configurations, editor settings, and 
 
 ## Setup
 
-### Recommended (Ansible-based Setup with Package Management)
+### Ansible-based Setup
 
 ```bash
 $ cd
 $ git clone https://github.com/MasonEgger/homedir.git
 $ cd homedir
-$ ansible-playbook ansible/setup.yml    # Install everything with confirmation
+$ ansible-playbook ansible/setup.yml    # Install everything
 ```
 
 **Modular Installation Options:**
@@ -42,16 +42,13 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 ```
 
 **Additional Options:**
-- `--extra-vars "interactive=true"` - Interactive mode: Confirm installation
-- `--extra-vars "exclude_claude=true"` - Exclude .claude directory from installation  
-- `--extra-vars "verbose=true"` - Verbose output
-- Options can be combined: `ansible-playbook ansible/setup.yml --extra-vars "interactive=true exclude_claude=true"`
+- `--check` - Preview changes without making them
+- `--diff` - Show detailed before/after diffs
 
 **Features:**
 - **Modular installation**: Install only the components you need (packages, dotfiles, claude, homedir)
 - **Cross-platform package management**: Automatically installs development tools via Homebrew (macOS) or apt (Ubuntu/Debian)
 - **Check mode support**: Preview changes before making them with `--check` and `--diff`
-- **Automatic backups**: Creates timestamped backups of existing files
 - **Idempotent**: Safe to run multiple times, only makes necessary changes
 
 ## What's Included

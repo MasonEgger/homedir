@@ -58,14 +58,5 @@ apt_packages:
   - rustc
   - yarn
 
-# Default configuration options
-# These can be overridden with --extra-vars
-interactive: false
-exclude_claude: false
-verbose: false
-
-# Backup directory with timestamp
-backup_dir: "{{ ansible_user_dir }}/.homedir-backup-{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}"
-
 # Root directory for dotfiles (parent of ansible directory)
 dotfiles_dir: "{{ playbook_dir | dirname }}"

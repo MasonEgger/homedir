@@ -6,36 +6,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a personal dotfiles/homedir configuration repository used to quickly set up a consistent development environment across different machines. The repository contains shell configurations, editor settings, and custom utility scripts.
 
-## Setup Methods
+## Setup Method
 
-### Manual Setup
-```bash
-cd
-git clone https://github.com/MasonEgger/homedir.git
-mv homedir/.[Xa-z]* homedir/* .
-rmdir homedir
-```
-
-### Automated Setup
+### Ansible-based Setup
 ```bash
 cd
 git clone https://github.com/MasonEgger/homedir.git
 cd homedir
-./setup.sh              # Default: Prompts for confirmation before installing
-./setup.sh -i           # Interactive mode: Confirm each file individually
-./setup.sh -n           # Dry-run mode: Show what would be done without making changes
-./setup.sh -x           # Exclude .claude directory from installation
-./setup.sh -v           # Verbose output
-./setup.sh -b DIR       # Custom backup directory (default: ~/.homedir-backup-TIMESTAMP)
+ansible-playbook ansible/setup.yml    # Install everything with confirmation
 ```
 
-The setup script features:
-- Creates timestamped backups of existing dotfiles in `~/.homedir-backup-YYYYMMDD_HHMMSS`
-- Excludes documentation files (README.md, CLAUDE.md, setup.sh)
+**Modular Installation Options:**
+```bash
+# Install specific components
+ansible-playbook ansible/setup.yml --tags packages     # Only install packages
+ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles  
+ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
+ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
+
+# Combine multiple components
+ansible-playbook ansible/setup.yml --tags packages,dotfiles
+ansible-playbook ansible/setup.yml --tags claude,homedir
+```
+
+**Additional Options:**
+- `--check` - Preview changes without making them
+- `--diff` - Show detailed before/after diffs
+
+The Ansible setup features:
+- Modular installation: Install only the components you need
+- Cross-platform package management (Homebrew for macOS, apt for Ubuntu/Debian)
 - Automatically makes all scripts in `.homedir/` executable
 - Preserves the repository for future updates
-- Supports combining options (e.g., `./setup.sh -n -v` for verbose dry-run)
-- Shows installation summary with counts of installed/skipped files
+- Idempotent: Safe to run multiple times
 
 ## Key Commands and Aliases
 
@@ -89,10 +92,13 @@ The setup script features:
 │   ├── lmsify                   # Markdown to HTML converter (bash script)
 │   ├── my-tools                 # Tool help display (bash script)
 │   └── wordcount                # Word count utility (Python script using uv)
+├── ansible/                     # Ansible automation setup
+│   ├── setup.yml                # Main Ansible playbook
+│   ├── tasks/                   # Modular task definitions
+│   └── group_vars/              # Variable definitions
 ├── .tmux.conf                   # Tmux terminal multiplexer configuration
 ├── .vimrc                       # Vim configuration
 ├── .zshrc                       # Zsh configuration with aliases
-├── setup.sh                     # Automated setup script
 ├── CLAUDE.md                    # This file
 └── README.md                    # Repository documentation
 ```
@@ -133,7 +139,7 @@ tmux                                 # Should use magenta status bar with functi
 # Keep repository in sync after setup
 cd ~/homedir
 git pull origin main
-./setup.sh  # Re-run to update files
+ansible-playbook ansible/setup.yml  # Re-run to update files
 ```
 
 ## Common Tasks
@@ -151,7 +157,7 @@ git pull origin main
    - Follow modern Pythonic style with type hints and docstrings
    - Use `ruff` formatting and `mypy --strict` type checking
 2. Make it executable: `chmod +x .homedir/script-name`
-3. The script will be automatically available in PATH after setup
+3. The script will be automatically available in PATH after Ansible setup
 4. Update `my-tools` script to include the new tool in help output
 5. Update README.md to document the new tool
 
@@ -171,14 +177,13 @@ git pull origin main
 
 ## Architecture Notes
 
-### Setup Script Behavior
-The `setup.sh` script preserves the cloned repository in `~/homedir/` after installation. This allows for:
-- Easy updates via `git pull` and re-running setup
+### Ansible Setup Behavior
+The Ansible playbook preserves the cloned repository in `~/homedir/` after installation. This allows for:
+- Easy updates via `git pull` and re-running the playbook
 - Version control tracking of dotfile changes
-- Rollback capabilities if needed
 
 ### Script Execution Model
-- Shell scripts in `.homedir/` are made executable automatically during setup
+- Shell scripts in `.homedir/` are made executable automatically during Ansible setup
 - Python scripts use `uv` for execution (e.g., `wordcount` uses `#!/usr/bin/env -S uv run --script`)
 - All scripts assume they're run from any directory (use absolute paths internally)
 - The `wordcount` script supports multiple output formats (text, JSON, CSV) and advanced options for markdown processing

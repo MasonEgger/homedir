@@ -1,64 +1,19 @@
 ---
 # .homedir Directory Installation Tasks
-- name: Find .homedir directory files
-  find:
-    paths: "{{ dotfiles_dir }}/.homedir"
-    patterns: "*"
-    file_type: any
-    hidden: yes
-    recurse: yes
-  register: homedir_files
-  when: (dotfiles_dir + '/.homedir') is exists
+- name: Check if .homedir directory exists
+  stat:
+    path: "{{ dotfiles_dir }}/.homedir"
+  register: homedir_dir
   tags: homedir
 
-- name: Filter .homedir files to install
-  set_fact:
-    homedir_files_to_install: "{{ homedir_files.files | 
-      map(attribute='path') | 
-      map('regex_replace', '^' + dotfiles_dir + '/', '') | 
-      list if homedir_files.files is defined else [] }}"
-  tags: homedir
-
-- name: Display .homedir files to install
-  debug:
-    msg:
-      - ".homedir files to install:"
-      - "{{ homedir_files_to_install }}"
-  when: homedir_files_to_install | length > 0
-  tags: homedir
-
-- name: Create .homedir directory structure
-  file:
-    path: "{{ ansible_user_dir }}/{{ item | dirname }}"
-    state: directory
-    mode: '0755'
-  with_items: "{{ homedir_files_to_install }}"
-  when: 
-    - homedir_files_to_install | length > 0
-    - item | dirname != "."
-  tags: homedir
-
-- name: Backup existing .homedir files
+- name: Install .homedir directory
   copy:
-    src: "{{ ansible_user_dir }}/{{ item }}"
-    dest: "{{ backup_dir }}/{{ item }}"
-    backup: no
-    remote_src: yes
-  with_items: "{{ homedir_files_to_install }}"
-  when: 
-    - homedir_files_to_install | length > 0
-    - (ansible_user_dir + '/' + item) is exists
-  ignore_errors: yes
-  tags: homedir
-
-- name: Install .homedir files
-  copy:
-    src: "{{ dotfiles_dir }}/{{ item }}"
-    dest: "{{ ansible_user_dir }}/{{ item }}"
+    src: "{{ dotfiles_dir }}/.homedir"
+    dest: "{{ ansible_user_dir }}/"
     backup: no
     mode: preserve
-  with_items: "{{ homedir_files_to_install }}"
-  when: homedir_files_to_install | length > 0
+    directory_mode: '0755'
+  when: homedir_dir.stat.exists
   register: homedir_files_installed
   tags: homedir
 
@@ -68,6 +23,5 @@
     mode: '0755'
   with_fileglob:
     - "{{ ansible_user_dir }}/.homedir/*"
-  when: (ansible_user_dir + '/.homedir') is exists
-  ignore_errors: yes
+  when: homedir_dir.stat.exists
   tags: homedir
