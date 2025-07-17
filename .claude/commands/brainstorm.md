@@ -2,6 +2,4 @@ Ask me one question at a time so we can develop a thorough, step-by-step spec fo
 
 Once we are done, save the spec as @spec.md
 
-Ask if the user wants to create a git repo on github. if so, commit the spec.md to git and push it to the newly created git repo. 
-
 Here’s the idea:

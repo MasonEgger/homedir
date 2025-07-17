@@ -9,6 +9,10 @@
     - Write in `strict` mode
     - No use of `Any`
 
+### Testing
+- Always use `pytest`
+- Use `nox` for automating the testing
+
 ### Tools
 - Use `ruff` for formatting and linting in place of black, flake8, and isort
 - Use `mypy` for type checking
