@@ -40,3 +40,15 @@ When creating standalone Python scripts, use PEP 723 inline metadata:
 - Make scripts executable with `chmod +x script_name`
 - Scripts can be run directly (`./script_name`) or with `uv run script_name`
 - This creates disposable virtual environments automatically
+
+### Package/Module Building
+- Include a `__init__.py` in any module or submodule directory
+- Never do relative imports, always do absolute imports.
+    - Example:
+        ```python
+        # Don't do this
+        from .module import something
+
+        # Do this
+        from my_package.module import something
+        ```
