@@ -40,3 +40,21 @@
   shell: curl -LsSf https://astral.sh/uv/install.sh | sh
   when: uv_check.rc != 0 and not ansible_check_mode
   tags: packages
+
+# Install lychee from GitHub releases on Linux (already available via brew on macOS)
+- name: Check if lychee is installed
+  command: which lychee
+  register: lychee_check
+  ignore_errors: yes
+  changed_when: false
+  tags: packages
+
+- name: Install lychee from GitHub releases (Linux)
+  shell: |
+    cd /tmp
+    curl -s https://api.github.com/repos/lycheeverse/lychee/releases/latest | grep "browser_download_url.*lychee-x86_64-unknown-linux-gnu.tar.gz" | cut -d '"' -f 4 | xargs curl -L -o lychee.tar.gz
+    tar -xzf lychee.tar.gz
+    sudo mv lychee /usr/local/bin/
+    rm lychee.tar.gz
+  when: lychee_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
+  tags: packages

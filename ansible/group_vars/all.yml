@@ -18,6 +18,7 @@ brew_packages:
   - gradle
   - httpie
   - jq
+  - just
   - kubernetes-cli
   - lolcat
   - lychee
@@ -46,6 +47,7 @@ apt_packages:
   - gradle
   - httpie
   - jq
+  - just
   - kubectl
   - lolcat
   - maven
