@@ -1,0 +1,2 @@
+- Read the front-matter for all of the context files in the Global Claude Code @docs directory and list what context - currently have available to load
+- ONLY list files in the Global Claude Code @docs directory and NOTHING else

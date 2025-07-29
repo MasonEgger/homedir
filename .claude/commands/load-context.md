@@ -1,0 +1,4 @@
+- Load the contents of $ARGUMENT into your context from the @docs folder that is in the Global configuration directory for Claude Code
+- If a file does not exist by this name, ALWAYS inform the user
+- If there is a file that has a similar name in the Global configuration directory for Claude Code, or has context that is related to the file name, then recommend this, but DO NOT load this file into context until given explicit permission
+- NEVER recommend or load ANY file that is not in the Global configuration directory for Claude Code
