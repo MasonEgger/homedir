@@ -14,6 +14,8 @@ Let's do this iteratively and dig into every relevant detail. Remember, only one
 
 Focus on getting the technical details and component boundaries clear enough that the resulting spec can be broken down into implementable, testable steps that follow the user's established development workflow.
 
+The goal of this is NOT to implement the application or write a bunch of code, but to create a specification file that you will use later to create a plan. I will review this after and make manual changes. You may write _some_ code to illustrate specific points, but do not focus on that. Instead focus on making the specification usable for you to consume and plan with later. 
+
 Once we are done, save the spec as @spec.md
 
 Here's the idea:
