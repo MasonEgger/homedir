@@ -11,3 +11,12 @@ You MUST perform these checks and they must BOTH be true before you proceed
 - Write this clened up content to the #Blog section to {$argument}.md file you checked above.
     - You should add Obsidian cross links to things you think are relevant or pages I have already created.
     - When determining if a link is worth cross linking too, analyze the layout of my vault and see if that's the kind of thing I'd like to store. If so, create a cross link, even if the other file doesn't exist, and I'll fill it in later.
+
+## Adding items to other sections
+
+There are other sections in my daily notes that you should fill out from my transcript. These sections are:
+* `Ideas & Insights`
+* `Learning`
+* `Highlights/Lowlights`
+
+After you analyze the transcript and write the blog, fill out these sections with short summaries from what I said in the transcript.
