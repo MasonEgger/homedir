@@ -4,6 +4,30 @@ Draft a detailed, step-by-step blueprint for building this project. Then, once y
 
 From here you should have the foundation to provide a series of prompts for a code-generation LLM that will implement each step in a test-driven manner. Prioritize best practices, incremental progress, and early testing, ensuring no big jumps in complexity at any stage. Make sure that each prompt builds on the previous prompts, and ends with wiring things together. There should be no hanging or orphaned code that isn't integrated into a previous step.
 
+## Testing Guidelines for Generated Prompts
+
+When specifying tests in RED phases, focus ONLY on application logic:
+
+**DO test:**
+- Business logic you're implementing
+- Data validation rules you define
+- Error handling you add
+- Custom algorithms or calculations
+- Integration between YOUR components
+
+**DO NOT test:**
+- Framework functionality (e.g., "Django can connect to database")
+- Third-party library behavior (e.g., "requests library makes HTTP calls")
+- Language features (e.g., "Python dicts work correctly")
+- Configuration loading (unless complex custom logic)
+- Trivial code (simple getters, setters, pass-through methods)
+
+**Examples:**
+- ❌ BAD: "Test that Django User model can be created" (tests Django)
+- ✅ GOOD: "Test that custom password validator rejects weak passwords" (tests YOUR logic)
+- ❌ BAD: "Test that database connection works" (tests framework)
+- ✅ GOOD: "Test that user registration creates audit log entry" (tests YOUR logic)
+
 ## Critical Requirements for Execute-Plan Compatibility
 
 **Each prompt must be structured as numbered sub-steps that execute-plan can follow sequentially:**
@@ -22,6 +46,20 @@ From here you should have the foundation to provide a series of prompts for a co
      - Test [specific scenario 1]
      - Test [specific scenario 2]
      - Test [specific edge case]
+
+   Example RED phase (GOOD):
+   1. RED: Write validation tests first:
+      - Create tests/test_user_validation.py:
+        - Test that custom password validator rejects passwords without special chars
+        - Test that email validator rejects disposable email domains
+        - Test that username validator blocks profanity
+
+   Example RED phase (BAD - Don't do this):
+   1. RED: Write model tests first:
+      - Create tests/test_models.py:
+        - Test that User model can be created  ← Testing Django, not your code
+        - Test that database saves User correctly  ← Testing Django ORM
+        - Test that email field stores email  ← Testing Django field behavior
 
 2. Document [specific component]:
    - Create/update [exact file path]
@@ -44,7 +82,7 @@ From here you should have the foundation to provide a series of prompts for a co
 
 7. Update documentation with [specific updates]
 
-8. Verify 100% test coverage maintained and run `just check`
+8. Verify meaningful test coverage of YOUR application logic and run `just check`
 ```
 
 ## Prompt Generation Requirements

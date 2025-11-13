@@ -14,6 +14,8 @@
    - **Implement the exact test scenarios** described
    - Follow strict TDD procedures (RED-GREEN-REFACTOR as specified)
    - Write robust, well-documented code
+   - Focus tests on YOUR application logic, not framework functionality
+   - Skip testing trivial code, framework features, or library behavior
    - Verify that all tests and linting passes
    - Make sure the tests pass, and the program builds/runs
 6. **Update documentation as specified** in the plan.md prompts for this step
@@ -25,5 +27,5 @@
 - **ALWAYS** use the exact file paths specified in the prompts
 - **FOLLOW** the RED-GREEN-REFACTOR cycle as outlined in each step
 - **COMPLETE** all documentation updates mentioned in the step
-- **VERIFY** 100% test coverage is maintained (as specified in plan.md)
+- **VERIFY** all application logic is tested (not framework/library code)
 - Treat plan.md prompts as **implementation instructions**, not suggestions

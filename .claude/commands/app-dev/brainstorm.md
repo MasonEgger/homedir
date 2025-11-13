@@ -6,7 +6,7 @@ Let's do this iteratively and dig into every relevant detail. Remember, only one
 
 ## Critical Focus Areas
 
-**TDD Implementation Ready**: Ensure the spec includes requirements that can be easily converted into failing tests first, then minimal implementations. Think about what would make good test scenarios.
+**TDD Implementation Ready**: Ensure the spec includes requirements for YOUR application logic that can be converted into failing tests first. Focus on business rules, data validation, error handling, and custom algorithms that YOU will implement - not framework or library behavior. Think about what application-specific behaviors need verification.
 
 **Component Boundaries**: Identify clear, testable components that can be implemented independently and then integrated together. Each component should have well-defined inputs, outputs, and responsibilities.
 

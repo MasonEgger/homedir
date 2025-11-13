@@ -6,7 +6,7 @@
     - Write `mypy` config to `pyproject.toml`
 - Install `ruff` as a dev dependency and lint the file. Use auto correct to fix any issues then manually fix any you find after that.
     - Write any linting config options to `pyproject.toml`
-- Install `pytest` and `pytest-cov`  and write a test to test `main.py`. Ensure 100% test coverage
+- Install `pytest` and `pytest-cov` and write tests to verify `main.py`'s application logic
     - Write any testing config options to `pyproject.toml`
 - Create a `justfile` and add the appropriate commands for managing the project based on the tools and steps above.
 - Create a CLAUDE.md capturing all the information about this repository

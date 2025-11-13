@@ -42,7 +42,21 @@ Whenever you build out a new project and specifically start a new Claude.md.
 - NEVER ignore the output of the system or the tests - Logs and messages often contain CRITICAL information.
 - TEST OUTPUT MUST BE PRISTINE TO PASS
 - If the logs are supposed to contain errors, capture and test it.
-- NO EXCEPTIONS POLICY: Under no circumstances should you mark any test type as "not applicable". Every project, regardless of size or complexity, MUST have unit tests, integration tests, AND end-to-end tests. If you believe a test type doesn't apply, you need the human to say exactly "I AUTHORIZE YOU TO SKIP WRITING TESTS THIS TIME"
+- TESTING POLICY: Tests MUST cover the functionality YOU are implementing, not framework or library code.
+
+Test Categories:
+  - **Unit Tests**: Test individual functions/methods with clear inputs/outputs
+  - **Integration Tests**: Test how your components work together
+  - **End-to-End Tests**: Test complete user workflows through your application
+
+Requirements:
+  - Focus on testing YOUR application logic, not framework behavior
+  - DO NOT test that frameworks/libraries work correctly (Django, pytest, FastAPI, etc.)
+  - DO NOT test trivial code (getters, setters, simple assignments)
+  - DO NOT test configuration files unless they contain complex logic
+  - Test behavior and outcomes, not implementation details
+
+When uncertain if a test is needed, ask: "Am I testing MY code's logic, or verifying that a library/framework works?"
 
 ## We practice TDD. That means:
 
