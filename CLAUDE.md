@@ -68,6 +68,7 @@ The Ansible setup features:
 - **Plugins**: git
 - **Path additions**: `~/.homedir`, Java OpenJDK 20.0.2 (`~/OpenJDK/jdk-20.0.2.jdk/Contents/Home`)
 - **Integrations**: `thefuck` command correction tool, GPG TTY export
+- **Local configuration**: `~/.zshrc.local` for machine-specific settings (auto-created, git-ignored)
 
 ### Editor Configuration
 - **Vim**: Line numbers, search highlighting, 80-char column marker, 4-space tabs, slate color scheme
@@ -99,6 +100,7 @@ The Ansible setup features:
 ├── .tmux.conf                   # Tmux terminal multiplexer configuration
 ├── .vimrc                       # Vim configuration
 ├── .zshrc                       # Zsh configuration with aliases
+├── .zshrc.local.example         # Template for machine-specific zsh configuration
 ├── CLAUDE.md                    # This file
 └── README.md                    # Repository documentation
 ```
@@ -164,6 +166,36 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 ### Modifying Vim Configuration
 1. Edit `.vimrc`
 2. Test changes by reopening vim or running `:source ~/.vimrc`
+
+### Using Machine-Specific Configuration (.zshrc.local)
+The `.zshrc.local` file allows you to add machine-specific settings without modifying the tracked `.zshrc` file:
+
+**Purpose**: Store machine-specific settings that should NOT be committed to the repository:
+- API keys and secrets
+- Machine-specific PATH additions
+- Local aliases for specific projects
+- Environment variables for local development
+- Overrides to repository defaults
+
+**Setup**:
+1. The file is automatically created during Ansible setup if it doesn't exist
+2. It's ignored by git (listed in `.gitignore`)
+3. Safe to run `ansible-playbook` multiple times - won't overwrite existing `.zshrc.local`
+
+**Usage**:
+```bash
+# Edit your local configuration
+vim ~/.zshrc.local
+
+# Example content:
+export OPENAI_API_KEY="sk-..."
+alias myproject="cd ~/Projects/my-special-project"
+export PATH="$HOME/bin:$PATH"
+```
+
+**Reference**: See `.zshrc.local.example` in the repository for more examples
+
+**Important**: `.zshrc.local` is sourced at the END of `.zshrc`, so settings here will override repository defaults
 
 ## Dependencies
 

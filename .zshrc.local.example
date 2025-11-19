@@ -1,0 +1,30 @@
+# Example machine-specific zsh configuration
+# Copy this to ~/.zshrc.local and customize for your machine
+#
+# This file is automatically created by the Ansible setup but is ignored by git,
+# making it safe for machine-specific settings, API keys, and local customizations.
+
+# Machine-specific aliases
+# alias myproject="cd /path/to/project"
+# alias work="cd ~/Work"
+
+# API keys and secrets (keep these private!)
+# export OPENAI_API_KEY="your-key-here"
+# export GITHUB_TOKEN="your-token-here"
+# export AWS_ACCESS_KEY_ID="your-key-here"
+# export AWS_SECRET_ACCESS_KEY="your-secret-here"
+
+# Machine-specific PATH additions
+# export PATH="$HOME/custom/bin:$PATH"
+# export PATH="/opt/local/bin:$PATH"
+
+# Local development settings
+# export DEBUG=true
+# export ENV=development
+
+# Machine-specific environment variables
+# export EDITOR=vim
+# export BROWSER=firefox
+
+# Override repository defaults if needed
+# ZSH_THEME="my-custom-theme"

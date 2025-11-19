@@ -26,8 +26,29 @@ alias django="python manage.py"
 alias venv-on='source $(git rev-parse --show-toplevel)/.venv/bin/activate'
 alias cdr='cd $(git rev-parse --show-toplevel)'
 
+# Tmux session management
+alias byobu=tmux
+alias td="tmux detach"
+alias tl="tmux ls"
 
+# Tmux attach function - attach to specified session
+unalias ta 2>/dev/null || true
+ta() {
+    if [ -z "$1" ]; then
+        tmux attach
+    else
+        tmux attach -t "$1"
+    fi
+}
 
+# Tmux new function - create new session with optional name
+tn() {
+    if [ -z "$1" ]; then
+        tmux new
+    else
+        tmux new -s "$1"
+    fi
+}
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
@@ -41,3 +62,6 @@ source $ZSH/oh-my-zsh.sh
 eval $(thefuck --alias) 
 
 export GPG_TTY=$(tty)
+
+# Source machine-specific configuration if it exists
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

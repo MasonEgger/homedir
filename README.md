@@ -72,6 +72,7 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 - **Shell**: Zsh with Oh My Zsh (geoffgarside theme)
 - **Plugins**: git
 - **Path additions**: `~/.homedir`
+- **Local configuration**: `~/.zshrc.local` for machine-specific settings (auto-created, git-ignored)
 - **Other**: thefuck alias integration, GPG TTY export
 
 ### Editor Configuration (`.vimrc`)
@@ -177,9 +178,41 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 ├── .tmux.conf                    # Tmux terminal multiplexer configuration
 ├── .vimrc                        # Vim configuration
 ├── .zshrc                        # Zsh configuration with aliases
+├── .zshrc.local.example          # Template for machine-specific zsh configuration
 ├── CLAUDE.md                     # Instructions for Claude AI assistant
 └── README.md                     # This file
 ```
+
+## Machine-Specific Configuration
+
+### Using `.zshrc.local`
+
+The `.zshrc.local` file allows you to maintain machine-specific settings without modifying the tracked `.zshrc` file. This is perfect for:
+
+- **API keys and secrets** (OpenAI, GitHub tokens, AWS credentials)
+- **Machine-specific PATH additions** (local binaries, custom tools)
+- **Local aliases** (project shortcuts specific to this machine)
+- **Environment variables** (DEBUG flags, local development settings)
+- **Override repository defaults** (custom themes, plugins)
+
+**Setup**:
+- Automatically created during Ansible setup if it doesn't exist
+- Ignored by git (safe for secrets and machine-specific settings)
+- Never overwritten when re-running `ansible-playbook`
+- Sourced at the end of `.zshrc` (settings here override repository defaults)
+
+**Usage**:
+```bash
+# Edit your local configuration
+vim ~/.zshrc.local
+
+# Example content:
+export OPENAI_API_KEY="sk-..."
+alias myproject="cd ~/Projects/my-special-project"
+export PATH="$HOME/bin:$PATH"
+```
+
+See `.zshrc.local.example` in the repository for more examples.
 
 ## Notes
 
@@ -188,6 +221,7 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 - The `wordcount` script uses `uv` for Python script execution and supports multiple output formats (text, JSON, CSV)
 - All custom scripts in `.homedir/` are executable and added to PATH
 - **Ansible Requirement**: Ensure Ansible is installed (`pip install ansible` or `brew install ansible`)
+- **Safe re-runs**: Running `ansible-playbook ansible/setup.yml` multiple times is safe and idempotent
 
 ## Contributing
 

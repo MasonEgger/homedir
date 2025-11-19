@@ -8,6 +8,17 @@
     mode: preserve
   with_fileglob:
     - "{{ dotfiles_dir }}/.*"
-  when: item is file
+  when: item is file and (item | basename) != '.gitignore'
   register: core_dotfiles_installed
+  tags: dotfiles
+
+- name: Create .zshrc.local if it doesn't exist
+  copy:
+    content: |
+      # Machine-specific zsh configuration
+      # This file is ignored by git and safe for local customization
+      # See .zshrc.local.example in the repository for usage examples
+    dest: "{{ ansible_user_dir }}/.zshrc.local"
+    mode: '0644'
+    force: no
   tags: dotfiles
