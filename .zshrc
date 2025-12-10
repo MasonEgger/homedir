@@ -59,9 +59,13 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
-eval $(thefuck --alias) 
+# Only initialize thefuck if it's installed
+if command -v thefuck &> /dev/null; then
+    eval $(thefuck --alias)
+fi
 
 export GPG_TTY=$(tty)
+gpgconf --launch gpg-agent
 
 # Source machine-specific configuration if it exists
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

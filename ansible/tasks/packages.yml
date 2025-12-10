@@ -28,17 +28,50 @@
   when: ansible_os_family == "Debian"
   tags: packages
 
-# Install uv Python package manager
+# Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
 - name: Check if uv is installed
-  command: which uv
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/bin/uv"
   register: uv_check
-  ignore_errors: yes
-  changed_when: false
   tags: packages
 
 - name: Install uv Python package manager
   shell: curl -LsSf https://astral.sh/uv/install.sh | sh
-  when: uv_check.rc != 0 and not ansible_check_mode
+  when: not uv_check.stat.exists and not ansible_check_mode
+  tags: packages
+
+# Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)
+- name: Check if kubectl is installed
+  command: which kubectl
+  register: kubectl_check
+  ignore_errors: yes
+  changed_when: false
+  tags: packages
+
+- name: Install kubectl (Linux)
+  shell: |
+    cd /tmp
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x kubectl
+    sudo mv kubectl /usr/local/bin/
+  become: yes
+  when: kubectl_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
+  tags: packages
+
+# Install just from GitHub releases on Linux (already available via brew on macOS)
+- name: Check if just is installed
+  command: which just
+  register: just_check
+  ignore_errors: yes
+  changed_when: false
+  tags: packages
+
+- name: Install just from GitHub releases (Linux)
+  shell: |
+    cd /tmp
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+  become: yes
+  when: just_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
   tags: packages
 
 # Install lychee from GitHub releases on Linux (already available via brew on macOS)

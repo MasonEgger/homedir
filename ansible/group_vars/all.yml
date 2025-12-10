@@ -47,8 +47,6 @@ apt_packages:
   - gradle
   - httpie
   - jq
-  - just
-  - kubectl
   - lolcat
   - maven
   - nodejs
