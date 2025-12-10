@@ -1,6 +1,6 @@
 ---
 # Core Dotfiles Installation Tasks (hidden files at top level, excluding directories)
-- name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.)
+- name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.) except .gitconfig
   copy:
     src: "{{ item }}"
     dest: "{{ ansible_user_dir }}/{{ item | basename }}"
@@ -8,8 +8,33 @@
     mode: preserve
   with_fileglob:
     - "{{ dotfiles_dir }}/.*"
-  when: item is file and (item | basename) != '.gitignore'
+  when: item is file and (item | basename) not in ['.gitignore', '.gitconfig']
   register: core_dotfiles_installed
+  tags: dotfiles
+
+- name: Detect GPG signing key
+  shell: gpg --list-secret-keys --keyid-format=long 2>/dev/null | grep -E "^sec" | head -1 | sed 's/.*\/\([A-F0-9]*\) .*/\1/'
+  register: gpg_key_result
+  changed_when: false
+  failed_when: false
+  tags: dotfiles
+
+- name: Set GPG signing key fact
+  set_fact:
+    gpg_signing_key: "{{ gpg_key_result.stdout | default('') }}"
+  tags: dotfiles
+
+- name: Warn if no GPG key found
+  debug:
+    msg: "WARNING: No GPG signing key found. Git commit signing will be disabled. Run 'gpg --list-secret-keys' to check your keys."
+  when: gpg_signing_key == ''
+  tags: dotfiles
+
+- name: Install .gitconfig from template
+  template:
+    src: "{{ playbook_dir }}/templates/gitconfig.j2"
+    dest: "{{ ansible_user_dir }}/.gitconfig"
+    mode: '0644'
   tags: dotfiles
 
 - name: Create .zshrc.local if it doesn't exist
