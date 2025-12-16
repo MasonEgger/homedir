@@ -1,0 +1,37 @@
+extends: script
+message: "Try to keep titles under 50 characters (%s)."
+scope: raw
+level: warning
+script: |
+  text := import("text")
+
+  matches := []
+  length := 50
+  cursor := 0
+  ruleActive := true
+
+  for line in text.split(scope, "\n") {
+
+    if text.re_find(`<!-- vale bphogan.TitleLength = NO -->`, line, -1) {
+      ruleActive = false
+    }
+
+    if text.re_find(`<!-- vale bphogan.TitleLength = YES -->`, line, -1) {
+      ruleActive = true
+    }
+
+    if ruleActive {
+      found := text.re_find(`^title:\s*"?(.*?)"?\s*$`, line, -1)
+
+      if found {
+          match := found[0][1]
+          if len(match.text) > length {
+              matches = append(matches, {
+                  begin: cursor + match.begin,
+                  end:   cursor + match.end
+              })
+          }
+      }
+    }
+    cursor += len(line) + 1
+  }

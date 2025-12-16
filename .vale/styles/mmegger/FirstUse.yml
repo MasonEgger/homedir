@@ -1,0 +1,18 @@
+extends: conditional
+message: "Define acronyms and abbreviations on first use. ('%s')"
+ignorecase: false
+level: suggestion
+first: '\b([A-Z]{3,5}s?)\b'
+second: '\(([A-Z]{3,5}s?)\)'
+exceptions:
+  - HTML
+  - JSON
+  - URL
+  - ZIP
+  - YAML
+  - CSS
+  - CEO
+  - CTO
+  - CMO
+  - CPO
+  - CISO

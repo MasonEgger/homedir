@@ -1,0 +1,8 @@
+extends: sequence
+message: "Avoid passive voice when possible: '%[1]s %[2]s'"
+level: warning
+tokens:
+  - tag: "VB|VBP|VBZ|VBD|VBG|VBN"
+    pattern: "(be|been|being|is|am|are|was|were)"
+  - tag: "VBN"
+    pattern: ".+"

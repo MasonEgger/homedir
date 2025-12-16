@@ -1,0 +1,5 @@
+extends: script
+message: "Try to keep code line length under 80 characters (%s)."
+scope: raw
+level: warning
+script: CodeLineLength.tengo

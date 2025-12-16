@@ -1,0 +1,51 @@
+// START:on-off
+// START:main
+fmt := import("fmt")
+text := import("text")
+
+matches := []
+cursor := 0
+// END:main
+// START_HIGHLIGHT
+ruleActive := true
+// END_HIGHLIGHT
+// START:main
+
+in_code_block := false
+max_line_length := 80
+
+for line in text.split(scope, "\n") {
+// END:main
+// START_HIGHLIGHT
+  if text.re_find(`<!-- vale AwesomeCo.CodeLineLength = NO -->`, line, -1) {
+    ruleActive = false
+  }
+
+  if text.re_find(`<!-- vale AwesomeCo.CodeLineLength = YES -->`, line, -1) {
+    ruleActive = true
+  }
+  if ruleActive {
+// END_HIGHLIGHT
+    // START:main
+    if text.re_match("^```.*$", line) {
+      in_code_block = !in_code_block
+    } else if in_code_block {
+      if len(line) > max_line_length {
+        matches = append(matches, {
+          begin: cursor,
+          end: cursor + len(line),
+          text: line
+        })
+      }
+    // END:main
+    // START_HIGHLIGHT
+    }
+    // END_HIGHLIGHT
+    // START:main
+  }
+
+  // Update cursor position after processing each line
+  cursor += len(line) + 1  // +1 for the newline character
+}
+// END:main
+// END:on-off

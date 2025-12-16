@@ -1,0 +1,15 @@
+extends: substitution
+message: "Use '%s' instead of '%s'."
+ignorecase: true
+level: error
+action:
+  name: replace
+swap:
+  - utilize: use
+  - utilized: used
+  - utilizes: uses
+  - utilizing: using
+  - repo: repository
+  - repos: repositories
+  - frontmattter: front matter
+  - front-matter: front matter

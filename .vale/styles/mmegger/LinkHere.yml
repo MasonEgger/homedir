@@ -1,0 +1,7 @@
+extends: existence
+message: "Don't use 'here' or 'click here' as the content of a link."
+ignorecase: true
+scope: raw
+level: error
+raw:
+  - '\[(click )?here\]\(.+\)'

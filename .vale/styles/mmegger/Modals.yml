@@ -1,0 +1,8 @@
+extends: sequence
+message: "Use present tense instead of '%[1]s %[2]s."
+level: warning
+tokens:
+  - tag: "MD"
+    pattern: "(will|should)"
+  - tag: "VB"
+    pattern: ".+"

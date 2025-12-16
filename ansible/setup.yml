@@ -24,6 +24,10 @@
       include_tasks: tasks/homedir.yml
       tags: homedir
 
+    - name: Include Vale configuration tasks
+      include_tasks: tasks/vale.yml
+      tags: vale
+
     # Summary
     - name: Installation summary
       debug:
@@ -34,8 +38,10 @@
           - "Core dotfiles installed: {{ 'Yes' if 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if 'homedir' in ansible_run_tags else 'Skipped' }}"
+          - "Vale configuration installed: {{ 'Yes' if 'vale' in ansible_run_tags else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
           - "{{ '- Check that custom commands in ~/.homedir/ work as expected' if not ansible_check_mode else '' }}"
+          - "{{ '- Verify Vale works with: vale --version' if not ansible_check_mode else '' }}"
       tags: always

@@ -1,0 +1,36 @@
+---
+# ABOUTME: Vale prose linter installation tasks.
+# Installs Vale styles directory and configuration for consistent technical writing checks.
+
+- name: Check if .vale directory exists
+  stat:
+    path: "{{ dotfiles_dir }}/.vale"
+  register: vale_dir
+  tags: vale
+
+- name: Install .vale directory with styles
+  copy:
+    src: "{{ dotfiles_dir }}/.vale"
+    dest: "{{ ansible_user_dir }}/"
+    backup: no
+    mode: preserve
+    directory_mode: '0755'
+  when: vale_dir.stat.exists
+  register: vale_styles_installed
+  tags: vale
+
+- name: Install .vale.ini configuration
+  copy:
+    src: "{{ dotfiles_dir }}/.vale.ini"
+    dest: "{{ ansible_user_dir }}/.vale.ini"
+    backup: no
+    mode: '0644'
+  when: vale_dir.stat.exists
+  register: vale_config_installed
+  tags: vale
+
+- name: Display Vale installation status
+  debug:
+    msg: "Vale styles and configuration installed at ~/.vale/ and ~/.vale.ini"
+  when: vale_styles_installed.changed or vale_config_installed.changed
+  tags: vale

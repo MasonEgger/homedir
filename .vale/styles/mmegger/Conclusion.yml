@@ -1,0 +1,8 @@
+extends: occurrence
+message: "A level 2 'Wrapping Up' heading must exist."
+ignorecase: true
+scope: raw
+level: error
+min: 1
+max: 1
+token: "#{2,} Wrapping Up"

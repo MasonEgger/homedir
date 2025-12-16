@@ -1,0 +1,8 @@
+extends: existence
+message: "Consider avoiding %s as it focuses on learning rather than doing."
+ignorecase: true
+level: warning
+action:
+  name: remove
+tokens:
+  - 'learn(?: how)? to'

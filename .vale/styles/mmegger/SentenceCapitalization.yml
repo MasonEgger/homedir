@@ -1,0 +1,7 @@
+extends: existence
+message: "Sentences should start with a capital letter."
+level: warning
+scope: sentence
+ignorecase: false
+raw:
+  - '^[a-z]'

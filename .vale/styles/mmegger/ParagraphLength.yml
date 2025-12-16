@@ -1,0 +1,6 @@
+extends: occurrence
+message: "Try to keep paragraphs between 100 and 200 words. (%s)."
+scope: paragraph
+level: suggestion
+max: 200
+token: \b(\w+)\b
