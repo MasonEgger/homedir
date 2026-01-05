@@ -25,7 +25,6 @@
 
 ### Clean Code
 
-- Function Size: Aim for functions ≤ 50 lines. If a function is doing too much, break it into smaller helper functions.
 - Single Responsibility: Each function/module should have one clear purpose. Don't lump unrelated logic together.
 - Naming: Use descriptive names. Avoid generic names like `tmp`, `data`, `handleStuff`. For example, prefer `calculateInvoiceTotal` over `doCalc`.
 - DRY Principle: Do not duplicate code. If similar logic exists in two places, refactor into a shared function (or clarify why both need their own implementation).
