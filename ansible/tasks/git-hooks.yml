@@ -1,21 +1,33 @@
 ---
 # Git Hooks Installation Tasks
+# Get target user home directory
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
+  tags: git-hooks
+
 - name: Ensure ~/.config/git/hooks directory exists
   file:
-    path: "{{ ansible_user_dir }}/.config/git/hooks"
+    path: "{{ target_user_home }}/.config/git/hooks"
     state: directory
     mode: '0755'
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: git-hooks
 
 - name: Install global git hooks
   copy:
     src: "{{ dotfiles_dir }}/.config/git/hooks/"
-    dest: "{{ ansible_user_dir }}/.config/git/hooks/"
+    dest: "{{ target_user_home }}/.config/git/hooks/"
     mode: '0755'
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: git-hooks
 
 - name: Ensure git hooks are executable
   file:
-    path: "{{ ansible_user_dir }}/.config/git/hooks/pre-commit"
+    path: "{{ target_user_home }}/.config/git/hooks/pre-commit"
     mode: '0755'
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: git-hooks

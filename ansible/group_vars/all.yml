@@ -60,3 +60,22 @@ apt_packages:
 
 # Root directory for dotfiles (parent of ansible directory)
 dotfiles_dir: "{{ playbook_dir | dirname }}"
+
+# User creation mode (default: false for backward compatibility)
+# Set to true to create a new user account (Linux only)
+create_user: false
+
+# Target user configuration
+target_user: "{{ new_user_name if create_user else ansible_user }}"
+new_user_name: mmegger
+new_user_shell: /bin/zsh
+new_user_home: "/home/{{ new_user_name }}"
+
+# Temporary password for new user (must be changed on first login)
+# SECURITY: Consider using ansible-vault to encrypt this value
+new_user_temp_password: "ChangeMe123!"
+
+# User groups for Linux
+new_user_groups:
+  - sudo
+  - docker  # Will be created if doesn't exist

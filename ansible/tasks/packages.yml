@@ -29,15 +29,24 @@
   tags: packages
 
 # Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_env.HOME }}"
+  tags: packages
+
 - name: Check if uv is installed
   stat:
-    path: "{{ ansible_env.HOME }}/.local/bin/uv"
+    path: "{{ target_user_home }}/.local/bin/uv"
   register: uv_check
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: packages
 
 - name: Install uv Python package manager
   shell: curl -LsSf https://astral.sh/uv/install.sh | sh
   when: not uv_check.stat.exists and not ansible_check_mode
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: packages
 
 # Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)

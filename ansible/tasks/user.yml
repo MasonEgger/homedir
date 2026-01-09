@@ -1,0 +1,149 @@
+---
+# ABOUTME: User creation tasks for setting up a brand new user account
+# This task file handles creating a new user with proper shell, groups, and Oh My Zsh
+
+# Only supported on Linux - fail fast if attempted on other platforms
+- name: Verify platform is Linux for user creation
+  fail:
+    msg: "User creation is only supported on Linux (Debian/Ubuntu). macOS should use default mode."
+  when: create_user and ansible_os_family != "Debian"
+
+# Ensure zsh is installed before creating user with zsh shell
+- name: Install zsh if not present
+  apt:
+    name: zsh
+    state: present
+    update_cache: yes
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+
+# Create docker group if it doesn't exist (idempotent)
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+
+# Create the new user account
+- name: Create user account
+  user:
+    name: "{{ new_user_name }}"
+    comment: "{{ new_user_name }} user account"
+    shell: "{{ new_user_shell }}"
+    home: "{{ new_user_home }}"
+    createhome: yes
+    groups: "{{ new_user_groups }}"
+    append: yes
+    state: present
+    password: "{{ new_user_temp_password | password_hash('sha512') }}"
+    update_password: on_create
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+  register: user_created
+
+# Force password change on first login
+- name: Force password change on first login
+  command: chage -d 0 {{ new_user_name }}
+  become: yes
+  when: create_user and ansible_os_family == "Debian" and user_created.changed
+
+# Display password information
+- name: Display temporary password information
+  debug:
+    msg: |
+      User {{ new_user_name }} has been created with temporary password: {{ new_user_temp_password }}
+      The user MUST change this password on first login.
+
+      To login: su - {{ new_user_name }}
+  when: create_user and ansible_os_family == "Debian" and user_created.changed
+
+# Install Oh My Zsh for the new user
+- name: Check if Oh My Zsh is already installed
+  stat:
+    path: "{{ new_user_home }}/.oh-my-zsh"
+  register: ohmyzsh_installed
+  when: create_user and ansible_os_family == "Debian"
+
+- name: Download Oh My Zsh installation script
+  get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: /tmp/install_ohmyzsh.sh
+    mode: '0755'
+  when: create_user and ansible_os_family == "Debian" and not ohmyzsh_installed.stat.exists
+
+- name: Install Oh My Zsh for target user
+  command: /tmp/install_ohmyzsh.sh --unattended
+  environment:
+    RUNZSH: "no"
+    CHSH: "no"
+  become: yes
+  become_user: "{{ target_user }}"
+  when: create_user and ansible_os_family == "Debian" and not ohmyzsh_installed.stat.exists
+  ignore_errors: yes
+  register: ohmyzsh_result
+
+- name: Display Oh My Zsh installation result
+  debug:
+    msg: "Oh My Zsh installation {{ 'succeeded' if ohmyzsh_result is succeeded else 'failed (non-critical)' }}"
+  when: create_user and ansible_os_family == "Debian" and not ohmyzsh_installed.stat.exists
+
+- name: Clean up Oh My Zsh installation script
+  file:
+    path: /tmp/install_ohmyzsh.sh
+    state: absent
+  when: create_user and ansible_os_family == "Debian" and not ohmyzsh_installed.stat.exists
+
+# SSH Key Setup for the new user
+- name: Create .ssh directory for new user
+  file:
+    path: "{{ new_user_home }}/.ssh"
+    state: directory
+    mode: '0700'
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+
+- name: Check if root has SSH public key
+  stat:
+    path: /root/.ssh/id_rsa.pub
+  register: root_ssh_key
+  when: create_user and ansible_os_family == "Debian"
+
+- name: Copy root's SSH public key to new user's authorized_keys
+  shell: cat /root/.ssh/id_rsa.pub >> {{ new_user_home }}/.ssh/authorized_keys
+  become: yes
+  when: create_user and ansible_os_family == "Debian" and root_ssh_key.stat.exists
+  args:
+    creates: "{{ new_user_home }}/.ssh/authorized_keys"
+
+- name: Download SSH keys from sshid.io
+  shell: curl -fs https://sshid.io/{{ new_user_name }} >> {{ new_user_home }}/.ssh/authorized_keys
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+  ignore_errors: yes
+  register: sshid_result
+
+- name: Display SSH key download result
+  debug:
+    msg: "SSH keys from sshid.io {{ 'downloaded successfully' if sshid_result is succeeded else 'failed (non-critical)' }}"
+  when: create_user and ansible_os_family == "Debian"
+
+- name: Set proper permissions on authorized_keys
+  file:
+    path: "{{ new_user_home }}/.ssh/authorized_keys"
+    mode: '0600'
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+  become: yes
+  when: create_user and ansible_os_family == "Debian"
+
+- name: Display SSH setup summary
+  debug:
+    msg: |
+      SSH key setup complete:
+      - Root's SSH key: {{ 'Copied' if (root_ssh_key.stat.exists | default(false)) else 'Not found (skipped)' }}
+      - Keys from sshid.io/{{ new_user_name }}: {{ 'Downloaded' if (sshid_result is succeeded) else 'Failed to download' }}
+      - Location: {{ new_user_home }}/.ssh/authorized_keys
+  when: create_user and ansible_os_family == "Debian"

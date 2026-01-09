@@ -7,6 +7,12 @@
   # Variables are now loaded automatically from group_vars/all.yml
 
   tasks:
+    # User creation (Linux only, opt-in via create_user variable)
+    - name: Include user creation tasks
+      include_tasks: tasks/user.yml
+      tags: user
+      when: create_user
+
     # Include modular tasks
     - name: Include package management tasks
       include_tasks: tasks/packages.yml
@@ -38,6 +44,9 @@
         msg:
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
+          - "Mode: {{ 'New User Creation' if create_user else 'Existing User Setup' }}"
+          - "Target User: {{ target_user }}"
+          - "User created: {{ 'Yes' if (create_user and 'user' in ansible_run_tags) else 'N/A' }}"
           - "Packages installed: {{ 'Yes' if 'packages' in ansible_run_tags else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags else 'Skipped' }}"
@@ -46,6 +55,8 @@
           - "Git hooks installed: {{ 'Yes' if 'git-hooks' in ansible_run_tags else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
+          - "{{ '- Login as new user: su - ' + target_user if (create_user and not ansible_check_mode) else '' }}"
+          - "{{ '- Change password on first login (required)' if (create_user and not ansible_check_mode) else '' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
           - "{{ '- Check that custom commands in ~/.homedir/ work as expected' if not ansible_check_mode else '' }}"
           - "{{ '- Verify Vale works with: vale --version' if not ansible_check_mode else '' }}"

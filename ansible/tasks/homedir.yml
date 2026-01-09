@@ -1,5 +1,11 @@
 ---
 # .homedir Directory Installation Tasks
+# Get target user home directory
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
+  tags: homedir
+
 - name: Check if .homedir directory exists
   stat:
     path: "{{ dotfiles_dir }}/.homedir"
@@ -9,19 +15,23 @@
 - name: Install .homedir directory
   copy:
     src: "{{ dotfiles_dir }}/.homedir"
-    dest: "{{ ansible_user_dir }}/"
+    dest: "{{ target_user_home }}/"
     backup: no
     mode: preserve
     directory_mode: '0755'
   when: homedir_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   register: homedir_files_installed
   tags: homedir
 
 - name: Make .homedir scripts executable
   file:
-    path: "{{ ansible_user_dir }}/.homedir/{{ item | basename }}"
+    path: "{{ target_user_home }}/.homedir/{{ item | basename }}"
     mode: '0755'
   with_fileglob:
-    - "{{ ansible_user_dir }}/.homedir/*"
+    - "{{ target_user_home }}/.homedir/*"
   when: homedir_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: homedir

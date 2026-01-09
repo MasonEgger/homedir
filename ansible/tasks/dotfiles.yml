@@ -1,14 +1,22 @@
 ---
 # Core Dotfiles Installation Tasks (hidden files at top level, excluding directories)
+# Get target user home directory
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
+  tags: dotfiles
+
 - name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.) except .gitconfig
   copy:
     src: "{{ item }}"
-    dest: "{{ ansible_user_dir }}/{{ item | basename }}"
+    dest: "{{ target_user_home }}/{{ item | basename }}"
     backup: no
     mode: preserve
   with_fileglob:
     - "{{ dotfiles_dir }}/.*"
   when: item is file and (item | basename) not in ['.gitignore', '.gitconfig']
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   register: core_dotfiles_installed
   tags: dotfiles
 
@@ -17,6 +25,8 @@
   register: gpg_key_result
   changed_when: false
   failed_when: false
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: dotfiles
 
 - name: Set GPG signing key fact
@@ -33,8 +43,10 @@
 - name: Install .gitconfig from template
   template:
     src: "{{ playbook_dir }}/templates/gitconfig.j2"
-    dest: "{{ ansible_user_dir }}/.gitconfig"
+    dest: "{{ target_user_home }}/.gitconfig"
     mode: '0644'
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: dotfiles
 
 - name: Create .zshrc.local if it doesn't exist
@@ -43,7 +55,9 @@
       # Machine-specific zsh configuration
       # This file is ignored by git and safe for local customization
       # See .zshrc.local.example in the repository for usage examples
-    dest: "{{ ansible_user_dir }}/.zshrc.local"
+    dest: "{{ target_user_home }}/.zshrc.local"
     mode: '0644'
     force: no
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   tags: dotfiles

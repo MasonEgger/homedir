@@ -1,5 +1,11 @@
 ---
 # .claude Directory Installation Tasks
+# Get target user home directory
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
+  tags: claude
+
 - name: Check if .claude directory exists
   stat:
     path: "{{ dotfiles_dir }}/.claude"
@@ -9,10 +15,12 @@
 - name: Install .claude directory
   copy:
     src: "{{ dotfiles_dir }}/.claude"
-    dest: "{{ ansible_user_dir }}/"
+    dest: "{{ target_user_home }}/"
     backup: no
     mode: preserve
     directory_mode: '0755'
   when: claude_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   register: claude_files_installed
   tags: claude

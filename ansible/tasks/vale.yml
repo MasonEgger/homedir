@@ -72,6 +72,12 @@
   tags: vale
 
 # Vale configuration installation
+# Get target user home directory
+- name: Get target user home directory
+  set_fact:
+    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
+  tags: vale
+
 - name: Check if .vale directory exists
   stat:
     path: "{{ dotfiles_dir }}/.vale"
@@ -81,21 +87,25 @@
 - name: Install .vale directory with styles
   copy:
     src: "{{ dotfiles_dir }}/.vale"
-    dest: "{{ ansible_user_dir }}/"
+    dest: "{{ target_user_home }}/"
     backup: no
     mode: preserve
     directory_mode: '0755'
   when: vale_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   register: vale_styles_installed
   tags: vale
 
 - name: Install .vale.ini configuration
   copy:
     src: "{{ dotfiles_dir }}/.vale.ini"
-    dest: "{{ ansible_user_dir }}/.vale.ini"
+    dest: "{{ target_user_home }}/.vale.ini"
     backup: no
     mode: '0644'
   when: vale_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
   register: vale_config_installed
   tags: vale
 
