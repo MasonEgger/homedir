@@ -1,7 +1,77 @@
 ---
 # ABOUTME: Vale prose linter installation tasks.
-# Installs Vale styles directory and configuration for consistent technical writing checks.
+# Installs Vale binary (on Linux), styles directory and configuration for consistent technical writing checks.
 
+# Vale binary installation for Linux (not in apt repos)
+- name: Check if Vale is already installed
+  command: which vale
+  register: vale_check
+  changed_when: false
+  failed_when: false
+  tags: vale
+
+- name: Get latest Vale version from GitHub
+  uri:
+    url: https://api.github.com/repos/errata-ai/vale/releases/latest
+    return_content: yes
+  register: vale_release
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+  tags: vale
+
+- name: Create temporary directory for Vale download
+  tempfile:
+    state: directory
+    suffix: vale
+  register: vale_temp_dir
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+  tags: vale
+
+- name: Download Vale binary for Linux
+  get_url:
+    url: "https://github.com/errata-ai/vale/releases/download/{{ vale_release.json.tag_name }}/vale_{{ vale_release.json.tag_name | regex_replace('^v', '') }}_Linux_64-bit.tar.gz"
+    dest: "{{ vale_temp_dir.path }}/vale.tar.gz"
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+  tags: vale
+
+- name: Extract Vale binary
+  unarchive:
+    src: "{{ vale_temp_dir.path }}/vale.tar.gz"
+    dest: "{{ vale_temp_dir.path }}"
+    remote_src: yes
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+  tags: vale
+
+- name: Install Vale binary to /usr/local/bin
+  become: yes
+  copy:
+    src: "{{ vale_temp_dir.path }}/vale"
+    dest: /usr/local/bin/vale
+    mode: '0755'
+    remote_src: yes
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+  tags: vale
+
+- name: Clean up Vale temporary directory
+  file:
+    path: "{{ vale_temp_dir.path }}"
+    state: absent
+  when:
+    - ansible_system == "Linux"
+    - vale_check.rc != 0
+    - vale_temp_dir.path is defined
+  tags: vale
+
+# Vale configuration installation
 - name: Check if .vale directory exists
   stat:
     path: "{{ dotfiles_dir }}/.vale"

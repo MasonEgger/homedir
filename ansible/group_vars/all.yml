@@ -56,7 +56,6 @@ apt_packages:
   - ripgrep
   - ruby
   - rustc
-  - vale
   - yarn
 
 # Root directory for dotfiles (parent of ansible directory)

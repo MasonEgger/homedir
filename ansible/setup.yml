@@ -28,6 +28,10 @@
       include_tasks: tasks/vale.yml
       tags: vale
 
+    - name: Include git hooks tasks
+      include_tasks: tasks/git-hooks.yml
+      tags: git-hooks
+
     # Summary
     - name: Installation summary
       debug:
@@ -39,6 +43,7 @@
           - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if 'homedir' in ansible_run_tags else 'Skipped' }}"
           - "Vale configuration installed: {{ 'Yes' if 'vale' in ansible_run_tags else 'Skipped' }}"
+          - "Git hooks installed: {{ 'Yes' if 'git-hooks' in ansible_run_tags else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
