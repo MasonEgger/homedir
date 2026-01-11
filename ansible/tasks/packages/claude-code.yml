@@ -1,0 +1,19 @@
+---
+# ABOUTME: Claude Code CLI installation tasks.
+# Installs Claude Code using the official native binary installer.
+
+# Check if Claude Code is already installed
+- name: Check if Claude Code is installed
+  command: which claude
+  register: claude_code_check
+  changed_when: false
+  failed_when: false
+  tags: packages
+
+# Install Claude Code using the official installer script
+- name: Install Claude Code
+  shell: curl -fsSL https://claude.ai/install.sh | bash
+  when: claude_code_check.rc != 0 and not ansible_check_mode
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
+  tags: packages

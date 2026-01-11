@@ -6,6 +6,40 @@
     target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
   tags: dotfiles
 
+# Oh My Zsh installation (prerequisite for .zshrc)
+- name: Check if Oh My Zsh is already installed
+  stat:
+    path: "{{ target_user_home }}/.oh-my-zsh"
+  register: ohmyzsh_installed
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
+  tags: dotfiles
+
+- name: Download Oh My Zsh installation script
+  get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: /tmp/install_ohmyzsh.sh
+    mode: '0755'
+  when: not ohmyzsh_installed.stat.exists
+  tags: dotfiles
+
+- name: Install Oh My Zsh
+  command: /tmp/install_ohmyzsh.sh --unattended
+  environment:
+    RUNZSH: "no"
+    CHSH: "no"
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
+  when: not ohmyzsh_installed.stat.exists and not ansible_check_mode
+  tags: dotfiles
+
+- name: Clean up Oh My Zsh installation script
+  file:
+    path: /tmp/install_ohmyzsh.sh
+    state: absent
+  when: not ohmyzsh_installed.stat.exists
+  tags: dotfiles
+
 - name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.) except .gitconfig
   copy:
     src: "{{ item }}"
@@ -60,4 +94,13 @@
     force: no
   become: "{{ create_user }}"
   become_user: "{{ target_user if create_user else omit }}"
+  tags: dotfiles
+
+# Include modular dotfile installations
+- name: Include git hooks installation
+  include_tasks: dotfiles/git-hooks.yml
+  tags: dotfiles
+
+- name: Include Vale configuration installation
+  include_tasks: dotfiles/vale-config.yml
   tags: dotfiles

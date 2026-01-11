@@ -100,3 +100,12 @@
     rm lychee.tar.gz
   when: lychee_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
   tags: packages
+
+# Include modular package installations
+- name: Include Vale installation
+  include_tasks: packages/vale.yml
+  tags: packages
+
+- name: Include Claude Code installation
+  include_tasks: packages/claude-code.yml
+  tags: packages

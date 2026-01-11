@@ -1,0 +1,32 @@
+---
+# ABOUTME: Vale prose linter configuration installation.
+# Installs .vale/ styles directory and .vale.ini configuration file.
+
+- name: Check if .vale directory exists in source
+  stat:
+    path: "{{ dotfiles_dir }}/.vale"
+  register: vale_dir
+  tags: dotfiles
+
+- name: Install .vale directory with styles
+  copy:
+    src: "{{ dotfiles_dir }}/.vale"
+    dest: "{{ target_user_home }}/"
+    backup: no
+    mode: preserve
+    directory_mode: '0755'
+  when: vale_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
+  tags: dotfiles
+
+- name: Install .vale.ini configuration
+  copy:
+    src: "{{ dotfiles_dir }}/.vale.ini"
+    dest: "{{ target_user_home }}/.vale.ini"
+    backup: no
+    mode: '0644'
+  when: vale_dir.stat.exists
+  become: "{{ create_user }}"
+  become_user: "{{ target_user if create_user else omit }}"
+  tags: dotfiles

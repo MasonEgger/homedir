@@ -23,41 +23,33 @@
       tags: dotfiles
 
     - name: Include .claude directory tasks
-      include_tasks: tasks/claude.yml
-      tags: claude
+      include_tasks: tasks/claude-config.yml
+      tags: claude-config
 
     - name: Include .homedir directory tasks
       include_tasks: tasks/homedir.yml
       tags: homedir
 
-    - name: Include Vale configuration tasks
-      include_tasks: tasks/vale.yml
-      tags: vale
-
-    - name: Include git hooks tasks
-      include_tasks: tasks/git-hooks.yml
-      tags: git-hooks
-
     # Summary
+    # Note: When no tags are specified, ansible_run_tags is empty but all tasks run
     - name: Installation summary
+      vars:
+        all_tags_ran: "{{ ansible_run_tags | length == 0 }}"
       debug:
         msg:
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
           - "Mode: {{ 'New User Creation' if create_user else 'Existing User Setup' }}"
           - "Target User: {{ target_user }}"
-          - "User created: {{ 'Yes' if (create_user and 'user' in ansible_run_tags) else 'N/A' }}"
-          - "Packages installed: {{ 'Yes' if 'packages' in ansible_run_tags else 'Skipped' }}"
-          - "Core dotfiles installed: {{ 'Yes' if 'dotfiles' in ansible_run_tags else 'Skipped' }}"
-          - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags else 'Skipped' }}"
-          - "Homedir directory installed: {{ 'Yes' if 'homedir' in ansible_run_tags else 'Skipped' }}"
-          - "Vale configuration installed: {{ 'Yes' if 'vale' in ansible_run_tags else 'Skipped' }}"
-          - "Git hooks installed: {{ 'Yes' if 'git-hooks' in ansible_run_tags else 'Skipped' }}"
+          - "User created: {{ 'Yes' if (create_user and (all_tags_ran or 'user' in ansible_run_tags)) else 'N/A' }}"
+          - "Packages installed: {{ 'Yes' if (all_tags_ran or 'packages' in ansible_run_tags) else 'Skipped' }}"
+          - "Core dotfiles installed: {{ 'Yes' if (all_tags_ran or 'dotfiles' in ansible_run_tags) else 'Skipped' }}"
+          - "Claude config installed: {{ 'Yes' if (all_tags_ran or 'claude-config' in ansible_run_tags) else 'Skipped' }}"
+          - "Homedir directory installed: {{ 'Yes' if (all_tags_ran or 'homedir' in ansible_run_tags) else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
           - "{{ '- Login as new user: su - ' + target_user if (create_user and not ansible_check_mode) else '' }}"
           - "{{ '- Change password on first login (required)' if (create_user and not ansible_check_mode) else '' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
           - "{{ '- Check that custom commands in ~/.homedir/ work as expected' if not ansible_check_mode else '' }}"
-          - "{{ '- Verify Vale works with: vale --version' if not ansible_check_mode else '' }}"
       tags: always

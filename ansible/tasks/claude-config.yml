@@ -4,13 +4,13 @@
 - name: Get target user home directory
   set_fact:
     target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
-  tags: claude
+  tags: claude-config
 
 - name: Check if .claude directory exists
   stat:
     path: "{{ dotfiles_dir }}/.claude"
   register: claude_dir
-  tags: claude
+  tags: claude-config
 
 - name: Install .claude directory
   copy:
@@ -23,4 +23,4 @@
   become: "{{ create_user }}"
   become_user: "{{ target_user if create_user else omit }}"
   register: claude_files_installed
-  tags: claude
+  tags: claude-config

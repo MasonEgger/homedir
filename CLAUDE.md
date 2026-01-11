@@ -19,14 +19,17 @@ ansible-playbook ansible/setup.yml    # Install everything
 **Modular Installation Options:**
 ```bash
 # Install specific components
-ansible-playbook ansible/setup.yml --tags packages     # Only install packages
-ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles  
-ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
-ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
+ansible-playbook ansible/setup.yml --tags packages       # Packages, Vale binary, Claude Code CLI
+ansible-playbook ansible/setup.yml --tags dotfiles       # Dotfiles, git hooks, Vale config
+ansible-playbook ansible/setup.yml --tags claude-config  # Only install .claude directory
+ansible-playbook ansible/setup.yml --tags homedir        # Only install .homedir scripts
+
+# Create new user on Linux (includes all setup for that user)
+sudo ansible-playbook ansible/setup.yml -e create_user=true
 
 # Combine multiple components
 ansible-playbook ansible/setup.yml --tags packages,dotfiles
-ansible-playbook ansible/setup.yml --tags claude,homedir
+ansible-playbook ansible/setup.yml --tags claude-config,homedir
 ```
 
 **Additional Options:**
@@ -34,7 +37,8 @@ ansible-playbook ansible/setup.yml --tags claude,homedir
 - `--diff` - Show detailed before/after diffs
 
 The Ansible setup features:
-- Modular installation: Install only the components you need
+- Modular installation: Install only the components you need (packages, dotfiles, claude-config, homedir)
+- New user creation: Set up brand new Linux users with `create_user=true` (Ubuntu/Debian)
 - Cross-platform package management (Homebrew for macOS, apt for Ubuntu/Debian)
 - Automatically makes all scripts in `.homedir/` executable
 - Preserves the repository for future updates
@@ -95,8 +99,22 @@ The Ansible setup features:
 │   └── wordcount                # Word count utility (Python script using uv)
 ├── ansible/                     # Ansible automation setup
 │   ├── setup.yml                # Main Ansible playbook
+│   ├── group_vars/              # Variable definitions
+│   │   └── all.yml              # Package lists and configuration
 │   ├── tasks/                   # Modular task definitions
-│   └── group_vars/              # Variable definitions
+│   │   ├── packages.yml         # Package management (includes packages/)
+│   │   ├── packages/            # Package submodules
+│   │   │   ├── claude-code.yml  # Claude Code CLI installation
+│   │   │   └── vale.yml         # Vale binary installation (Linux)
+│   │   ├── dotfiles.yml         # Core dotfiles (includes dotfiles/)
+│   │   ├── dotfiles/            # Dotfile submodules
+│   │   │   ├── git-hooks.yml    # Global git hooks
+│   │   │   └── vale-config.yml  # Vale configuration
+│   │   ├── claude-config.yml    # Claude directory installation
+│   │   ├── homedir.yml          # Homedir scripts installation
+│   │   └── user.yml             # New user creation (Linux only)
+│   └── templates/               # Jinja2 templates
+│       └── gitconfig.j2         # .gitconfig template
 ├── .tmux.conf                   # Tmux terminal multiplexer configuration
 ├── .vimrc                       # Vim configuration
 ├── .zshrc                       # Zsh configuration with aliases

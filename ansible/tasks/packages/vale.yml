@@ -1,14 +1,13 @@
 ---
-# ABOUTME: Vale prose linter installation tasks.
-# Installs Vale binary (on Linux), styles directory and configuration for consistent technical writing checks.
+# ABOUTME: Vale prose linter binary installation for Linux.
+# On macOS, Vale is installed via Homebrew in the main packages.yml.
 
-# Vale binary installation for Linux (not in apt repos)
 - name: Check if Vale is already installed
   command: which vale
   register: vale_check
   changed_when: false
   failed_when: false
-  tags: vale
+  tags: packages
 
 - name: Get latest Vale version from GitHub
   uri:
@@ -18,7 +17,7 @@
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
-  tags: vale
+  tags: packages
 
 - name: Create temporary directory for Vale download
   tempfile:
@@ -28,7 +27,7 @@
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
-  tags: vale
+  tags: packages
 
 - name: Download Vale binary for Linux
   get_url:
@@ -37,7 +36,7 @@
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
-  tags: vale
+  tags: packages
 
 - name: Extract Vale binary
   unarchive:
@@ -47,7 +46,7 @@
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
-  tags: vale
+  tags: packages
 
 - name: Install Vale binary to /usr/local/bin
   become: yes
@@ -59,7 +58,7 @@
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
-  tags: vale
+  tags: packages
 
 - name: Clean up Vale temporary directory
   file:
@@ -69,48 +68,4 @@
     - ansible_system == "Linux"
     - vale_check.rc != 0
     - vale_temp_dir.path is defined
-  tags: vale
-
-# Vale configuration installation
-# Get target user home directory
-- name: Get target user home directory
-  set_fact:
-    target_user_home: "{{ new_user_home if create_user else ansible_user_dir }}"
-  tags: vale
-
-- name: Check if .vale directory exists
-  stat:
-    path: "{{ dotfiles_dir }}/.vale"
-  register: vale_dir
-  tags: vale
-
-- name: Install .vale directory with styles
-  copy:
-    src: "{{ dotfiles_dir }}/.vale"
-    dest: "{{ target_user_home }}/"
-    backup: no
-    mode: preserve
-    directory_mode: '0755'
-  when: vale_dir.stat.exists
-  become: "{{ create_user }}"
-  become_user: "{{ target_user if create_user else omit }}"
-  register: vale_styles_installed
-  tags: vale
-
-- name: Install .vale.ini configuration
-  copy:
-    src: "{{ dotfiles_dir }}/.vale.ini"
-    dest: "{{ target_user_home }}/.vale.ini"
-    backup: no
-    mode: '0644'
-  when: vale_dir.stat.exists
-  become: "{{ create_user }}"
-  become_user: "{{ target_user if create_user else omit }}"
-  register: vale_config_installed
-  tags: vale
-
-- name: Display Vale installation status
-  debug:
-    msg: "Vale styles and configuration installed at ~/.vale/ and ~/.vale.ini"
-  when: vale_styles_installed.changed or vale_config_installed.changed
-  tags: vale
+  tags: packages
