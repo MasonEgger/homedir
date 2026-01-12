@@ -72,8 +72,10 @@ new_user_shell: /bin/zsh
 new_user_home: "/home/{{ new_user_name }}"
 
 # Temporary password for new user (must be changed on first login)
-# SECURITY: Consider using ansible-vault to encrypt this value
+# Plain text: "ChangeMe123!" - pre-hashed to avoid passlib dependency
+# To generate a new hash: python3 -c "import crypt; print(crypt.crypt('YourPassword', crypt.mksalt(crypt.METHOD_SHA512)))"
 new_user_temp_password: "ChangeMe123!"
+new_user_temp_password_hash: "$6$EC9Xfk89PWv1Yw/e$pqM3IR5s2BkmVKc/aaadMVTlp.yPRF4UeOjVEPUjiGlBGbjzYFJLBJ27T089lx0/jgal4mg6Epi12/G895gGO/"
 
 # User groups for Linux
 new_user_groups:
