@@ -11,7 +11,7 @@
     - name: Include user creation tasks
       include_tasks: tasks/user.yml
       tags: user
-      when: create_user
+      when: create_user | bool
 
     # Include modular tasks
     - name: Include package management tasks
@@ -39,17 +39,17 @@
         msg:
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
-          - "Mode: {{ 'New User Creation' if create_user else 'Existing User Setup' }}"
+          - "Mode: {{ 'New User Creation' if (create_user | bool) else 'Existing User Setup' }}"
           - "Target User: {{ target_user }}"
-          - "User created: {{ 'Yes' if (create_user and (all_tags_ran or 'user' in ansible_run_tags)) else 'N/A' }}"
+          - "User created: {{ 'Yes' if ((create_user | bool) and (all_tags_ran or 'user' in ansible_run_tags)) else 'N/A' }}"
           - "Packages installed: {{ 'Yes' if (all_tags_ran or 'packages' in ansible_run_tags) else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if (all_tags_ran or 'dotfiles' in ansible_run_tags) else 'Skipped' }}"
           - "Claude config installed: {{ 'Yes' if (all_tags_ran or 'claude-config' in ansible_run_tags) else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if (all_tags_ran or 'homedir' in ansible_run_tags) else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
-          - "{{ '- Login as new user: su - ' + target_user if (create_user and not ansible_check_mode) else '' }}"
-          - "{{ '- Change password on first login (required)' if (create_user and not ansible_check_mode) else '' }}"
+          - "{{ '- Login as new user: su - ' + target_user if ((create_user | bool) and not ansible_check_mode) else '' }}"
+          - "{{ '- Change password on first login (required)' if ((create_user | bool) and not ansible_check_mode) else '' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"
           - "{{ '- Check that custom commands in ~/.homedir/ work as expected' if not ansible_check_mode else '' }}"
       tags: always
