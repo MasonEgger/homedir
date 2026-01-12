@@ -52,7 +52,7 @@ apt_packages:
   - nodejs
   - python3
   - python3-pip
-  - qemu
+  - qemu-system
   - ripgrep
   - ruby
   - rustc
