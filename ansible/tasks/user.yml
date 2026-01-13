@@ -115,8 +115,6 @@
   shell: cat /root/.ssh/id_rsa.pub >> {{ new_user_home }}/.ssh/authorized_keys
   become: yes
   when: (create_user | bool) and ansible_os_family == "Debian" and root_ssh_key.stat.exists
-  args:
-    creates: "{{ new_user_home }}/.ssh/authorized_keys"
 
 - name: Download SSH keys from sshid.io
   shell: curl -fs https://sshid.io/{{ new_user_name }} >> {{ new_user_home }}/.ssh/authorized_keys
