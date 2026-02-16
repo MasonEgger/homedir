@@ -1,9 +1,9 @@
 ---
 # Tailscale Installation/Update Tasks
 
-# macOS - install or update via Homebrew
-- name: Install/update Tailscale via Homebrew (macOS)
-  homebrew:
+# macOS - install or update via Homebrew cask (full GUI app)
+- name: Install/update Tailscale via Homebrew cask (macOS)
+  homebrew_cask:
     name: tailscale
     state: latest
   when: ansible_os_family == "Darwin"
