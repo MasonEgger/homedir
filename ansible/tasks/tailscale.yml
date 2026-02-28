@@ -1,0 +1,38 @@
+---
+# Tailscale Installation/Update Tasks
+
+# macOS - install or update via Homebrew cask (full GUI app)
+- name: Install/update Tailscale via Homebrew cask (macOS)
+  homebrew_cask:
+    name: tailscale
+    state: latest
+  when: ansible_os_family == "Darwin"
+  tags: tailscale
+
+# Debian/Ubuntu - use official install script for repo setup, then apt for updates
+- name: Check if Tailscale apt repo is configured (Debian/Ubuntu)
+  stat:
+    path: /etc/apt/sources.list.d/tailscale.list
+  register: tailscale_repo_check
+  when: ansible_os_family == "Debian"
+  tags: tailscale
+
+- name: Install Tailscale via official script (Debian/Ubuntu)
+  shell: curl -fsSL https://tailscale.com/install.sh | sh
+  become: yes
+  when:
+    - ansible_os_family == "Debian"
+    - not (tailscale_repo_check.stat.exists | default(false))
+    - not ansible_check_mode
+  tags: tailscale
+
+- name: Update Tailscale via apt (Debian/Ubuntu)
+  apt:
+    name: tailscale
+    state: latest
+    update_cache: yes
+  become: yes
+  when:
+    - ansible_os_family == "Debian"
+    - tailscale_repo_check.stat.exists | default(false)
+  tags: tailscale
