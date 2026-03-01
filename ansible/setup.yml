@@ -12,6 +12,10 @@
       include_tasks: tasks/packages.yml
       tags: packages
 
+    - name: Include user setup tasks
+      include_tasks: tasks/user.yml
+      tags: user
+
     - name: Include Oh My Zsh tasks
       include_tasks: tasks/oh-my-zsh.yml
       tags: oh-my-zsh
@@ -47,6 +51,7 @@
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
           - "Packages installed: {{ 'Yes' if 'packages' in ansible_run_tags else 'Skipped' }}"
+          - "User setup (mmegger): {{ 'Yes' if 'user' in ansible_run_tags else 'Skipped' }}"
           - "Oh My Zsh installed: {{ 'Yes' if 'oh-my-zsh' in ansible_run_tags else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if 'claude' in ansible_run_tags else 'Skipped' }}"

@@ -1,0 +1,82 @@
+---
+# User setup tasks - creates mmegger user on Debian/Ubuntu systems
+
+- name: Create mmegger user with sudo privileges
+  ansible.builtin.user:
+    name: mmegger
+    shell: /bin/zsh
+    groups: sudo
+    append: yes
+    create_home: yes
+    password: "{{ 'changeme123' | password_hash('sha512') }}"
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: user
+
+- name: Force password change on next login
+  ansible.builtin.command: chage -d 0 mmegger
+  become: yes
+  when: ansible_os_family == "Debian"
+  changed_when: true
+  tags: user
+
+- name: Create .ssh directory for mmegger
+  ansible.builtin.file:
+    path: /home/mmegger/.ssh
+    state: directory
+    owner: mmegger
+    group: mmegger
+    mode: '0700'
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: user
+
+- name: Copy root authorized_keys to mmegger
+  ansible.builtin.copy:
+    src: /root/.ssh/authorized_keys
+    dest: /home/mmegger/.ssh/authorized_keys
+    remote_src: yes
+    owner: mmegger
+    group: mmegger
+    mode: '0600'
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: user
+
+- name: Append sshid.io keys for mmegger
+  ansible.builtin.shell: curl -fs https://sshid.io/mmegger >> /home/mmegger/.ssh/authorized_keys
+  become: yes
+  become_user: mmegger
+  when: ansible_os_family == "Debian"
+  tags: user
+
+- name: Check if SSH password authentication is enabled
+  ansible.builtin.command: grep -E "^PasswordAuthentication yes" /etc/ssh/sshd_config
+  register: sshd_password_auth
+  ignore_errors: yes
+  changed_when: false
+  become: yes
+  when: ansible_os_family == "Debian"
+  tags: user
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication yes'
+    line: 'PasswordAuthentication no'
+  become: yes
+  when:
+    - ansible_os_family == "Debian"
+    - sshd_password_auth.rc | default(1) == 0
+  register: sshd_config_changed
+  tags: user
+
+- name: Restart sshd after config change
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  become: yes
+  when:
+    - ansible_os_family == "Debian"
+    - sshd_config_changed.changed | default(false)
+  tags: user

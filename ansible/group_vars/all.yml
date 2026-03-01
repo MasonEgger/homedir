@@ -53,12 +53,13 @@ apt_packages:
   - nodejs
   - python3
   - python3-pip
-  - qemu
+  - qemu-system
   - ripgrep
   - ruby
   - rustc
   - tmux
   - yarn
+  - zsh
 
 # Root directory for dotfiles (parent of ansible directory)
 dotfiles_dir: "{{ playbook_dir | dirname }}"
