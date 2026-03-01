@@ -1,0 +1,25 @@
+---
+# ABOUTME: Oh My Zsh installation tasks.
+# Installs Oh My Zsh framework required by .zshrc configuration.
+
+- name: Check if Oh My Zsh is already installed
+  stat:
+    path: "{{ ansible_user_dir }}/.oh-my-zsh"
+  register: omz_dir
+  tags: oh-my-zsh
+
+- name: Install Oh My Zsh
+  shell: >
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  args:
+    creates: "{{ ansible_user_dir }}/.oh-my-zsh"
+  when:
+    - not omz_dir.stat.exists
+    - not ansible_check_mode
+  tags: oh-my-zsh
+
+- name: Display Oh My Zsh installation status
+  debug:
+    msg: "Oh My Zsh installed at ~/.oh-my-zsh"
+  when: not omz_dir.stat.exists
+  tags: oh-my-zsh
