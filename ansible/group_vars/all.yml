@@ -63,3 +63,6 @@ apt_packages:
 
 # Root directory for dotfiles (parent of ansible directory)
 dotfiles_dir: "{{ playbook_dir | dirname }}"
+
+# Target home directory for per-user installs (overridden by mmegger tag)
+target_home: "{{ ansible_user_dir }}"

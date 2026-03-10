@@ -1,0 +1,153 @@
+---
+# ABOUTME: Full mmegger user setup on Debian/Ubuntu systems.
+# Creates the user, then re-uses existing task files targeting /home/mmegger.
+
+# =============================================================================
+# System packages (runs as root, shared across all users)
+# =============================================================================
+
+- name: Include package management tasks for mmegger
+  include_tasks: packages.yml
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include Vale tasks for mmegger (binary install is system-wide)
+  include_tasks: vale.yml
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include Tailscale tasks for mmegger
+  include_tasks: tailscale.yml
+  tags: mmegger
+
+# =============================================================================
+# User creation
+# =============================================================================
+
+- name: Ensure zsh is installed before creating user
+  apt:
+    name: zsh
+    state: present
+  become: yes
+  tags: mmegger
+
+- name: Create mmegger user with sudo privileges
+  ansible.builtin.user:
+    name: mmegger
+    shell: /bin/zsh
+    groups: sudo
+    append: yes
+    create_home: yes
+    password: "{{ 'changeme123' | password_hash('sha512') }}"
+  become: yes
+  tags: mmegger
+
+- name: Force password change on next login
+  ansible.builtin.command: chage -d 0 mmegger
+  become: yes
+  changed_when: true
+  tags: mmegger
+
+# =============================================================================
+# SSH setup and hardening
+# =============================================================================
+
+- name: Create .ssh directory for mmegger
+  ansible.builtin.file:
+    path: /home/mmegger/.ssh
+    state: directory
+    owner: mmegger
+    group: mmegger
+    mode: '0700'
+  become: yes
+  tags: mmegger
+
+- name: Copy root authorized_keys to mmegger
+  ansible.builtin.copy:
+    src: /root/.ssh/authorized_keys
+    dest: /home/mmegger/.ssh/authorized_keys
+    remote_src: yes
+    owner: mmegger
+    group: mmegger
+    mode: '0600'
+  become: yes
+  tags: mmegger
+
+- name: Append sshid.io keys for mmegger
+  ansible.builtin.shell: curl -fs https://sshid.io/mmegger >> /home/mmegger/.ssh/authorized_keys
+  become: yes
+  become_user: mmegger
+  tags: mmegger
+
+- name: Check if SSH password authentication is enabled
+  ansible.builtin.command: grep -E "^PasswordAuthentication yes" /etc/ssh/sshd_config
+  register: sshd_password_auth
+  ignore_errors: yes
+  changed_when: false
+  become: yes
+  tags: mmegger
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication yes'
+    line: 'PasswordAuthentication no'
+  become: yes
+  when: sshd_password_auth.rc | default(1) == 0
+  register: sshd_config_changed
+  tags: mmegger
+
+- name: Restart sshd after config change
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  become: yes
+  when: sshd_config_changed.changed | default(false)
+  tags: mmegger
+
+# =============================================================================
+# Per-user configs (re-use existing task files as mmegger)
+# =============================================================================
+
+- name: Include Oh My Zsh tasks for mmegger
+  include_tasks: oh-my-zsh.yml
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include dotfiles tasks for mmegger
+  include_tasks: dotfiles.yml
+  become: yes
+  become_user: mmegger
+  vars:
+    target_home: /home/mmegger
+  tags: mmegger
+
+- name: Include .claude directory tasks for mmegger
+  include_tasks: claude.yml
+  become: yes
+  become_user: mmegger
+  vars:
+    target_home: /home/mmegger
+  tags: mmegger
+
+- name: Include .homedir directory tasks for mmegger
+  include_tasks: homedir.yml
+  become: yes
+  become_user: mmegger
+  vars:
+    target_home: /home/mmegger
+  tags: mmegger
+
+- name: Include git hooks tasks for mmegger
+  include_tasks: git-hooks.yml
+  become: yes
+  become_user: mmegger
+  vars:
+    target_home: /home/mmegger
+  tags: mmegger

@@ -9,7 +9,7 @@
 - name: Install .claude directory
   copy:
     src: "{{ dotfiles_dir }}/.claude"
-    dest: "{{ ansible_user_dir }}/"
+    dest: "{{ target_home }}/"
     backup: no
     mode: preserve
     directory_mode: '0755'

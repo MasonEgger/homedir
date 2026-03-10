@@ -28,15 +28,31 @@
   when: ansible_os_family == "Debian"
   tags: packages
 
+# Install Claude Code CLI
+- name: Check if Claude Code CLI is installed
+  stat:
+    path: "{{ target_home }}/.claude/local/bin/claude"
+  register: claude_cli_check
+  tags: packages
+
+- name: Install Claude Code CLI
+  shell: curl -fsSL https://claude.ai/install.sh | sh
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
+  when: not claude_cli_check.stat.exists and not ansible_check_mode
+  tags: packages
+
 # Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
 - name: Check if uv is installed
   stat:
-    path: "{{ ansible_env.HOME }}/.local/bin/uv"
+    path: "{{ target_home }}/.local/bin/uv"
   register: uv_check
   tags: packages
 
 - name: Install uv Python package manager
   shell: curl -LsSf https://astral.sh/uv/install.sh | sh
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   when: not uv_check.stat.exists and not ansible_check_mode
   tags: packages
 

@@ -81,10 +81,12 @@
 - name: Install .vale directory with styles
   copy:
     src: "{{ dotfiles_dir }}/.vale"
-    dest: "{{ ansible_user_dir }}/"
+    dest: "{{ target_home }}/"
     backup: no
     mode: preserve
     directory_mode: '0755'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
   register: vale_styles_installed
   tags: vale
@@ -92,9 +94,11 @@
 - name: Install .vale.ini configuration
   copy:
     src: "{{ dotfiles_dir }}/.vale.ini"
-    dest: "{{ ansible_user_dir }}/.vale.ini"
+    dest: "{{ target_home }}/.vale.ini"
     backup: no
     mode: '0644'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
   register: vale_config_installed
   tags: vale

@@ -3,7 +3,7 @@
 - name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.) except .gitconfig
   copy:
     src: "{{ item }}"
-    dest: "{{ ansible_user_dir }}/{{ item | basename }}"
+    dest: "{{ target_home }}/{{ item | basename }}"
     backup: no
     mode: preserve
   with_fileglob:
@@ -33,7 +33,7 @@
 - name: Install .gitconfig from template
   template:
     src: "{{ playbook_dir }}/templates/gitconfig.j2"
-    dest: "{{ ansible_user_dir }}/.gitconfig"
+    dest: "{{ target_home }}/.gitconfig"
     mode: '0644'
   tags: dotfiles
 
@@ -43,7 +43,7 @@
       # Machine-specific zsh configuration
       # This file is ignored by git and safe for local customization
       # See .zshrc.local.example in the repository for usage examples
-    dest: "{{ ansible_user_dir }}/.zshrc.local"
+    dest: "{{ target_home }}/.zshrc.local"
     mode: '0644'
     force: no
   tags: dotfiles

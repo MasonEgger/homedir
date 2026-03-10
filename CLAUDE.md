@@ -9,18 +9,27 @@ This is a personal dotfiles/homedir configuration repository used to quickly set
 ## Setup Method
 
 ### Ansible-based Setup
+
+There are two main scenarios:
+
+**1. Sync dev environment** (current user, any machine):
 ```bash
-cd
-git clone https://github.com/MasonEgger/homedir.git
-cd homedir
-ansible-playbook ansible/setup.yml    # Install everything
+cd ~/homedir
+ansible-playbook ansible/setup.yml                     # Install everything for current user
 ```
 
-**Modular Installation Options:**
+**2. Fresh mmegger user install** (remote Debian/Ubuntu server):
 ```bash
-# Install specific components
-ansible-playbook ansible/setup.yml --tags packages     # Only install packages
-ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles  
+ansible-playbook ansible/setup.yml --tags mmegger       # Full mmegger user setup
+```
+
+The `mmegger` tag is self-contained: installs all apt packages and system tools (vale, tailscale, kubectl, just, lychee), creates the user, sets zsh as default shell, installs Oh My Zsh, dotfiles, .claude directory, .homedir scripts, vale config, git hooks, Claude Code CLI, uv, and hardens SSH.
+
+**Modular Installation Options (sync scenario):**
+```bash
+# Install specific components for the current user
+ansible-playbook ansible/setup.yml --tags packages     # Only install packages + Claude Code CLI
+ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles
 ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
 ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
 
@@ -34,8 +43,10 @@ ansible-playbook ansible/setup.yml --tags claude,homedir
 - `--diff` - Show detailed before/after diffs
 
 The Ansible setup features:
+- Two clear workflows: dev environment sync vs. fresh user provisioning
 - Modular installation: Install only the components you need
 - Cross-platform package management (Homebrew for macOS, apt for Ubuntu/Debian)
+- Claude Code CLI installed via curl for both scenarios
 - Automatically makes all scripts in `.homedir/` executable
 - Preserves the repository for future updates
 - Idempotent: Safe to run multiple times
