@@ -67,5 +67,11 @@ fi
 export GPG_TTY=$(tty)
 gpgconf --launch gpg-agent
 
+# macOS-specific configuration
+if [[ "$(uname)" == "Darwin" ]]; then
+    # Use Tailscale.app CLI instead of brew-installed tailscale
+    alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+fi
+
 # Source machine-specific configuration if it exists
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
