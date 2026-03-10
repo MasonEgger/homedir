@@ -10,18 +10,26 @@ This repository contains my personal shell configurations, editor settings, and 
 
 ### Ansible-based Setup
 
+**Sync dev environment** (current user, any machine):
 ```bash
 $ cd
 $ git clone https://github.com/MasonEgger/homedir.git
 $ cd homedir
-$ ansible-playbook ansible/setup.yml    # Install everything
+$ ansible-playbook ansible/setup.yml    # Install everything for current user
 ```
 
-**Modular Installation Options:**
+**Fresh mmegger user install** (remote Debian/Ubuntu server):
 ```bash
-# Install specific components
+ansible-playbook ansible/setup.yml --tags mmegger    # Full mmegger user setup
+```
+
+The `mmegger` tag is self-contained: creates the user, hardens SSH, and then installs all packages, dotfiles, and tools for the mmegger user.
+
+**Modular Installation Options (sync scenario):**
+```bash
+# Install specific components for the current user
 ansible-playbook ansible/setup.yml --tags packages     # Only install packages
-ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles  
+ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles
 ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
 ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
 

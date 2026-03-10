@@ -43,7 +43,7 @@
     - name: Include mmegger user setup tasks (Debian only)
       include_tasks: tasks/mmegger.yml
       when: ansible_os_family == "Debian"
-      tags: mmegger
+      tags: [never, mmegger]
 
     # Summary
     - name: Installation summary
