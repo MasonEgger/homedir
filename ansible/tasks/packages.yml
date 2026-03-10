@@ -36,7 +36,7 @@
   tags: packages
 
 - name: Install Claude Code CLI
-  shell: curl -fsSL https://claude.ai/install.sh | sh
+  shell: curl -fsSL https://claude.ai/install.sh | bash
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
   when: not claude_cli_check.stat.exists and not ansible_check_mode
