@@ -5,6 +5,8 @@
     path: "{{ target_home }}/.config/git/hooks"
     state: directory
     mode: '0755'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks
 
 - name: Install global git hooks
@@ -12,10 +14,14 @@
     src: "{{ dotfiles_dir }}/.config/git/hooks/"
     dest: "{{ target_home }}/.config/git/hooks/"
     mode: '0755'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks
 
 - name: Ensure git hooks are executable
   file:
     path: "{{ target_home }}/.config/git/hooks/pre-commit"
     mode: '0755'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks

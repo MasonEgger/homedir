@@ -14,6 +14,8 @@
     mode: preserve
     directory_mode: '0755'
   when: homedir_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   register: homedir_files_installed
   tags: homedir
 
@@ -24,4 +26,6 @@
   with_fileglob:
     - "{{ target_home }}/.homedir/*"
   when: homedir_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: homedir

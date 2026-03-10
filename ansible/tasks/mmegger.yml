@@ -122,32 +122,28 @@
 
 - name: Include dotfiles tasks for mmegger
   include_tasks: dotfiles.yml
-  become: yes
-  become_user: mmegger
   vars:
     target_home: /home/mmegger
+    target_user: mmegger
   tags: mmegger
 
 - name: Include .claude directory tasks for mmegger
   include_tasks: claude.yml
-  become: yes
-  become_user: mmegger
   vars:
     target_home: /home/mmegger
+    target_user: mmegger
   tags: mmegger
 
 - name: Include .homedir directory tasks for mmegger
   include_tasks: homedir.yml
-  become: yes
-  become_user: mmegger
   vars:
     target_home: /home/mmegger
+    target_user: mmegger
   tags: mmegger
 
 - name: Include git hooks tasks for mmegger
   include_tasks: git-hooks.yml
-  become: yes
-  become_user: mmegger
   vars:
     target_home: /home/mmegger
+    target_user: mmegger
   tags: mmegger

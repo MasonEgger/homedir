@@ -9,6 +9,8 @@
   with_fileglob:
     - "{{ dotfiles_dir }}/.*"
   when: item is file and (item | basename) not in ['.gitignore', '.gitconfig']
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   register: core_dotfiles_installed
   tags: dotfiles
 
@@ -35,6 +37,8 @@
     src: "{{ playbook_dir }}/templates/gitconfig.j2"
     dest: "{{ target_home }}/.gitconfig"
     mode: '0644'
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles
 
 - name: Create .zshrc.local if it doesn't exist
@@ -46,4 +50,6 @@
     dest: "{{ target_home }}/.zshrc.local"
     mode: '0644'
     force: no
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles

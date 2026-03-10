@@ -14,5 +14,7 @@
     mode: preserve
     directory_mode: '0755'
   when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
   register: claude_files_installed
   tags: claude
