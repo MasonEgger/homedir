@@ -7,21 +7,30 @@
 # =============================================================================
 
 - name: Include package management tasks for mmegger
-  include_tasks: packages.yml
+  include_tasks:
+    file: packages.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include Vale tasks for mmegger (binary install is system-wide)
-  include_tasks: vale.yml
+  include_tasks:
+    file: vale.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include Tailscale tasks for mmegger
-  include_tasks: tailscale.yml
+  include_tasks:
+    file: tailscale.yml
+    apply:
+      tags: mmegger
   tags: mmegger
 
 # =============================================================================
@@ -114,35 +123,50 @@
 # =============================================================================
 
 - name: Include Oh My Zsh tasks for mmegger
-  include_tasks: oh-my-zsh.yml
+  include_tasks:
+    file: oh-my-zsh.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include dotfiles tasks for mmegger
-  include_tasks: dotfiles.yml
+  include_tasks:
+    file: dotfiles.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include .claude directory tasks for mmegger
-  include_tasks: claude.yml
+  include_tasks:
+    file: claude.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include .homedir directory tasks for mmegger
-  include_tasks: homedir.yml
+  include_tasks:
+    file: homedir.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
   tags: mmegger
 
 - name: Include git hooks tasks for mmegger
-  include_tasks: git-hooks.yml
+  include_tasks:
+    file: git-hooks.yml
+    apply:
+      tags: mmegger
   vars:
     target_home: /home/mmegger
     target_user: mmegger
