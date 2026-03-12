@@ -44,12 +44,6 @@
   become: true
   tags: mmegger
 
-- name: Force password change on next login
-  ansible.builtin.command: chage -d 0 mmegger
-  become: true
-  changed_when: true
-  tags: mmegger
-
 # =============================================================================
 # SSH setup and hardening
 # =============================================================================
@@ -187,6 +181,12 @@
   vars:
     target_home: /home/mmegger
     target_user: mmegger
+  tags: mmegger
+
+- name: Force password change on next login
+  ansible.builtin.command: chage -d 0 mmegger
+  become: true
+  changed_when: true
   tags: mmegger
 
 - name: Read mmegger SSH public key
