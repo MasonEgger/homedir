@@ -15,16 +15,6 @@
     target_home: /home/mmegger
   tags: mmegger
 
-- name: Include Vale tasks for mmegger (binary install is system-wide)
-  ansible.builtin.include_tasks:
-    file: vale.yml
-    apply:
-      tags: mmegger
-  vars:
-    target_home: /home/mmegger
-    target_user: mmegger
-  tags: mmegger
-
 - name: Include Tailscale tasks for mmegger
   ansible.builtin.include_tasks:
     file: tailscale.yml
@@ -142,6 +132,16 @@
 - name: Include user tool installs for mmegger (Oh My Zsh, Claude CLI, uv)
   ansible.builtin.include_tasks:
     file: user-tools.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include Vale tasks for mmegger (binary + per-user config)
+  ansible.builtin.include_tasks:
+    file: vale.yml
     apply:
       tags: mmegger
   vars:
