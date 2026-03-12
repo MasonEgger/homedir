@@ -88,7 +88,6 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
   register: vale_styles_installed
   tags: vale
@@ -102,7 +101,6 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
   register: vale_config_installed
   tags: vale

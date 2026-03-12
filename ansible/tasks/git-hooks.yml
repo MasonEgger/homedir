@@ -8,7 +8,6 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks
 
 - name: Install global git hooks
@@ -19,7 +18,6 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks
 
 - name: Ensure git hooks are executable
@@ -29,5 +27,4 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   tags: git-hooks

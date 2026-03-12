@@ -12,7 +12,6 @@
     - "{{ dotfiles_dir }}/.*"
   when: item is file and (item | basename) not in ['.gitignore', '.gitconfig']
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   register: core_dotfiles_installed
   tags: dotfiles
 
@@ -27,7 +26,6 @@
     src: "{{ target_home }}/.ssh/id_ed25519.pub"
   register: ssh_pubkey_result
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   when: ssh_key_check.stat.exists
   tags: dotfiles
 
@@ -64,7 +62,6 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles
 
 - name: Create .zshrc.local if it doesn't exist
@@ -79,5 +76,4 @@
     group: "{{ target_user | default(omit) }}"
     force: false
   become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles
