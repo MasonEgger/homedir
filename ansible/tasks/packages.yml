@@ -36,12 +36,18 @@
   register: claude_cli_check
   tags: packages
 
-- name: Install Claude Code CLI
-  ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
-  become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
+- name: Install Claude Code CLI (target user)
+  ansible.builtin.shell: >-
+    su - {{ target_user }} -s /bin/bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
+  become: true
   changed_when: true
-  when: not claude_cli_check.stat.exists and not ansible_check_mode
+  when: target_user is defined and not claude_cli_check.stat.exists and not ansible_check_mode
+  tags: packages
+
+- name: Install Claude Code CLI (current user)
+  ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
+  changed_when: true
+  when: target_user is not defined and not claude_cli_check.stat.exists and not ansible_check_mode
   tags: packages
 
 # Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
@@ -51,12 +57,18 @@
   register: uv_check
   tags: packages
 
-- name: Install uv Python package manager
-  ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
-  become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
+- name: Install uv Python package manager (target user)
+  ansible.builtin.shell: >-
+    su - {{ target_user }} -s /bin/bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+  become: true
   changed_when: true
-  when: not uv_check.stat.exists and not ansible_check_mode
+  when: target_user is defined and not uv_check.stat.exists and not ansible_check_mode
+  tags: packages
+
+- name: Install uv Python package manager (current user)
+  ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
+  changed_when: true
+  when: target_user is not defined and not uv_check.stat.exists and not ansible_check_mode
   tags: packages
 
 # Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)
