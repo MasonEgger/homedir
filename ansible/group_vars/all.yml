@@ -16,6 +16,7 @@ brew_packages:
   - gnupg
   - go
   - gradle
+  - openjdk
   - httpie
   - jq
   - just
@@ -46,6 +47,7 @@ apt_packages:
   - gnupg
   - golang-go
   - gradle
+  - default-jdk
   - httpie
   - jq
   - lolcat
