@@ -4,16 +4,16 @@
 
 # Vale binary installation for Linux (not in apt repos)
 - name: Check if Vale is already installed
-  command: which vale
+  ansible.builtin.command: which vale
   register: vale_check
   changed_when: false
   failed_when: false
   tags: vale
 
 - name: Get latest Vale version from GitHub
-  uri:
+  ansible.builtin.uri:
     url: https://api.github.com/repos/errata-ai/vale/releases/latest
-    return_content: yes
+    return_content: true
   register: vale_release
   when:
     - ansible_system == "Linux"
@@ -21,7 +21,7 @@
   tags: vale
 
 - name: Create temporary directory for Vale download
-  tempfile:
+  ansible.builtin.tempfile:
     state: directory
     suffix: vale
   register: vale_temp_dir
@@ -31,7 +31,7 @@
   tags: vale
 
 - name: Download Vale binary for Linux
-  get_url:
+  ansible.builtin.get_url:
     url: "https://github.com/errata-ai/vale/releases/download/{{ vale_release.json.tag_name }}/vale_{{ vale_release.json.tag_name | regex_replace('^v', '') }}_Linux_64-bit.tar.gz"
     dest: "{{ vale_temp_dir.path }}/vale.tar.gz"
   when:
@@ -40,29 +40,29 @@
   tags: vale
 
 - name: Extract Vale binary
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ vale_temp_dir.path }}/vale.tar.gz"
     dest: "{{ vale_temp_dir.path }}"
-    remote_src: yes
+    remote_src: true
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
   tags: vale
 
 - name: Install Vale binary to /usr/local/bin
-  become: yes
-  copy:
+  become: true
+  ansible.builtin.copy:
     src: "{{ vale_temp_dir.path }}/vale"
     dest: /usr/local/bin/vale
     mode: '0755'
-    remote_src: yes
+    remote_src: true
   when:
     - ansible_system == "Linux"
     - vale_check.rc != 0
   tags: vale
 
 - name: Clean up Vale temporary directory
-  file:
+  ansible.builtin.file:
     path: "{{ vale_temp_dir.path }}"
     state: absent
   when:
@@ -73,18 +73,20 @@
 
 # Vale configuration installation
 - name: Check if .vale directory exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ dotfiles_dir }}/.vale"
   register: vale_dir
   tags: vale
 
 - name: Install .vale directory with styles
-  copy:
+  ansible.builtin.copy:
     src: "{{ dotfiles_dir }}/.vale"
     dest: "{{ target_home }}/"
-    backup: no
+    backup: false
     mode: preserve
     directory_mode: '0755'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
@@ -92,11 +94,13 @@
   tags: vale
 
 - name: Install .vale.ini configuration
-  copy:
+  ansible.builtin.copy:
     src: "{{ dotfiles_dir }}/.vale.ini"
     dest: "{{ target_home }}/.vale.ini"
-    backup: no
+    backup: false
     mode: '0644'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
   when: vale_dir.stat.exists
@@ -104,7 +108,7 @@
   tags: vale
 
 - name: Display Vale installation status
-  debug:
+  ansible.builtin.debug:
     msg: "Vale styles and configuration installed at ~/.vale/ and ~/.vale.ini"
   when: vale_styles_installed.changed or vale_config_installed.changed
   tags: vale

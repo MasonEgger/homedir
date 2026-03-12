@@ -1,4 +1,4 @@
-# Currently no external roles required
-# This file exists for future extensibility
-collections: []
+# community.general is needed for homebrew and homebrew_cask modules
+collections:
+  - name: community.general
 roles: []

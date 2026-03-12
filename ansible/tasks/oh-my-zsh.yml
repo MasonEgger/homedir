@@ -2,42 +2,13 @@
 # ABOUTME: Oh My Zsh installation tasks.
 # Installs Oh My Zsh for the target user on macOS or Debian.
 
-- name: Check if Oh My Zsh is already installed (macOS)
-  stat:
-    path: "{{ target_home }}/.oh-my-zsh"
-  register: omz_dir_macos
-  when: ansible_os_family == "Darwin"
-  tags: oh-my-zsh
-
-- name: Install Oh My Zsh (macOS)
-  shell: >
+- name: Install Oh My Zsh
+  ansible.builtin.shell: >
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   args:
     creates: "{{ target_home }}/.oh-my-zsh"
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
-  when:
-    - ansible_os_family == "Darwin"
-    - not (omz_dir_macos.stat.exists | default(false))
-    - not ansible_check_mode
-  tags: oh-my-zsh
-
-- name: Check if Oh My Zsh is already installed (Debian)
-  stat:
-    path: "{{ target_home }}/.oh-my-zsh"
-  register: omz_dir_debian
-  when: ansible_os_family == "Debian"
-  tags: oh-my-zsh
-
-- name: Install Oh My Zsh (Debian)
-  shell: >
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  args:
-    creates: "{{ target_home }}/.oh-my-zsh"
-  become: "{{ target_user is defined }}"
-  become_user: "{{ target_user | default(omit) }}"
-  when:
-    - ansible_os_family == "Debian"
-    - not (omz_dir_debian.stat.exists | default(false))
-    - not ansible_check_mode
+  changed_when: true
+  when: not ansible_check_mode
   tags: oh-my-zsh

@@ -1,11 +1,13 @@
 ---
 # Core Dotfiles Installation Tasks (hidden files at top level, excluding directories)
 - name: Install dotfiles (.vimrc, .zshrc, .tmux.conf, etc.) except .gitconfig
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ target_home }}/{{ item | basename }}"
-    backup: no
+    backup: false
     mode: preserve
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   with_fileglob:
     - "{{ dotfiles_dir }}/.*"
   when: item is file and (item | basename) not in ['.gitignore', '.gitconfig']
@@ -14,42 +16,68 @@
   register: core_dotfiles_installed
   tags: dotfiles
 
+- name: Check for SSH signing key
+  ansible.builtin.stat:
+    path: "{{ target_home }}/.ssh/id_ed25519.pub"
+  register: ssh_key_check
+  tags: dotfiles
+
+- name: Read SSH public key for signing
+  ansible.builtin.slurp:
+    src: "{{ target_home }}/.ssh/id_ed25519.pub"
+  register: ssh_pubkey_result
+  become: "{{ target_user is defined }}"
+  become_user: "{{ target_user | default(omit) }}"
+  when: ssh_key_check.stat.exists
+  tags: dotfiles
+
+- name: Set SSH signing key fact
+  ansible.builtin.set_fact:
+    ssh_signing_key: "{{ (ssh_pubkey_result.content | b64decode | trim) if ssh_key_check.stat.exists else '' }}"
+  tags: dotfiles
+
 - name: Detect GPG signing key
-  shell: gpg --list-secret-keys --keyid-format=long 2>/dev/null | grep -E "^sec" | head -1 | sed 's/.*\/\([A-F0-9]*\) .*/\1/'
+  ansible.builtin.shell: "gpg --list-secret-keys --keyid-format=long --with-colons 2>/dev/null | awk -F: '/^sec:/ { print $5; exit }'"
   register: gpg_key_result
   changed_when: false
   failed_when: false
+  when: ssh_signing_key == ''
   tags: dotfiles
 
 - name: Set GPG signing key fact
-  set_fact:
+  ansible.builtin.set_fact:
     gpg_signing_key: "{{ gpg_key_result.stdout | default('') }}"
+  when: ssh_signing_key == ''
   tags: dotfiles
 
-- name: Warn if no GPG key found
-  debug:
-    msg: "WARNING: No GPG signing key found. Git commit signing will be disabled. Run 'gpg --list-secret-keys' to check your keys."
-  when: gpg_signing_key == ''
+- name: Warn if no signing key found
+  ansible.builtin.debug:
+    msg: "WARNING: No SSH or GPG signing key found. Git commit signing will be disabled."
+  when: ssh_signing_key == '' and (gpg_signing_key | default('')) == ''
   tags: dotfiles
 
 - name: Install .gitconfig from template
-  template:
+  ansible.builtin.template:
     src: "{{ playbook_dir }}/templates/gitconfig.j2"
     dest: "{{ target_home }}/.gitconfig"
     mode: '0644'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles
 
 - name: Create .zshrc.local if it doesn't exist
-  copy:
+  ansible.builtin.copy:
     content: |
       # Machine-specific zsh configuration
       # This file is ignored by git and safe for local customization
       # See .zshrc.local.example in the repository for usage examples
     dest: "{{ target_home }}/.zshrc.local"
     mode: '0644'
-    force: no
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
+    force: false
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
   tags: dotfiles

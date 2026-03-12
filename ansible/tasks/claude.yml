@@ -1,18 +1,20 @@
 ---
 # .claude Directory Installation Tasks
 - name: Check if .claude directory exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ dotfiles_dir }}/.claude"
   register: claude_dir
   tags: claude
 
 - name: Install .claude directory
-  copy:
+  ansible.builtin.copy:
     src: "{{ dotfiles_dir }}/.claude"
     dest: "{{ target_home }}/"
-    backup: no
+    backup: false
     mode: preserve
     directory_mode: '0755'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   when: claude_dir.stat.exists
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"

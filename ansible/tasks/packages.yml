@@ -1,109 +1,115 @@
 ---
 # Package Management Tasks
 - name: Update Homebrew (macOS)
-  homebrew:
-    update_homebrew: yes
+  community.general.homebrew:
+    update_homebrew: true
   when: ansible_os_family == "Darwin"
   tags: packages
 
 - name: Install packages via Homebrew (macOS)
-  homebrew:
+  community.general.homebrew:
     name: "{{ brew_packages }}"
     state: present
   when: ansible_os_family == "Darwin"
   tags: packages
 
 - name: Update apt cache (Ubuntu/Debian)
-  apt:
-    update_cache: yes
-  become: yes
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
   when: ansible_os_family == "Debian"
   tags: packages
 
 - name: Install packages via apt (Ubuntu/Debian)
-  apt:
+  ansible.builtin.apt:
     name: "{{ apt_packages }}"
     state: present
-  become: yes
+  become: true
   when: ansible_os_family == "Debian"
   tags: packages
 
 # Install Claude Code CLI
+# No versioned installer URL available — always installs latest
 - name: Check if Claude Code CLI is installed
-  stat:
+  ansible.builtin.stat:
     path: "{{ target_home }}/.claude/local/bin/claude"
   register: claude_cli_check
   tags: packages
 
 - name: Install Claude Code CLI
-  shell: curl -fsSL https://claude.ai/install.sh | bash
+  ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
+  changed_when: true
   when: not claude_cli_check.stat.exists and not ansible_check_mode
   tags: packages
 
 # Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
 - name: Check if uv is installed
-  stat:
+  ansible.builtin.stat:
     path: "{{ target_home }}/.local/bin/uv"
   register: uv_check
   tags: packages
 
 - name: Install uv Python package manager
-  shell: curl -LsSf https://astral.sh/uv/install.sh | sh
+  ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
+  changed_when: true
   when: not uv_check.stat.exists and not ansible_check_mode
   tags: packages
 
 # Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)
 - name: Check if kubectl is installed
-  command: which kubectl
+  ansible.builtin.stat:
+    path: /usr/local/bin/kubectl
   register: kubectl_check
-  ignore_errors: yes
-  changed_when: false
   tags: packages
 
 - name: Install kubectl (Linux)
-  shell: |
+  ansible.builtin.shell: |
     cd /tmp
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}/kubectl"
     chmod +x kubectl
-    sudo mv kubectl /usr/local/bin/
-  become: yes
-  when: kubectl_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
+    mv kubectl /usr/local/bin/
+  become: true
+  changed_when: true
+  when: not kubectl_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
   tags: packages
 
 # Install just from GitHub releases on Linux (already available via brew on macOS)
+# Installer fetches latest release from GitHub; no version pin available
 - name: Check if just is installed
-  command: which just
+  ansible.builtin.stat:
+    path: /usr/local/bin/just
   register: just_check
-  ignore_errors: yes
-  changed_when: false
   tags: packages
 
 - name: Install just from GitHub releases (Linux)
-  shell: |
+  ansible.builtin.shell: |
     cd /tmp
     curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-  become: yes
-  when: just_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
+  become: true
+  changed_when: true
+  when: not just_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
   tags: packages
 
 # Install lychee from GitHub releases on Linux (already available via brew on macOS)
 - name: Check if lychee is installed
-  command: which lychee
+  ansible.builtin.stat:
+    path: /usr/local/bin/lychee
   register: lychee_check
-  ignore_errors: yes
-  changed_when: false
   tags: packages
 
 - name: Install lychee from GitHub releases (Linux)
-  shell: |
+  ansible.builtin.shell: |
     cd /tmp
-    curl -s https://api.github.com/repos/lycheeverse/lychee/releases/latest | grep "browser_download_url.*lychee-x86_64-unknown-linux-gnu.tar.gz" | cut -d '"' -f 4 | xargs curl -L -o lychee.tar.gz
+    ARCH="{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
+    curl -s https://api.github.com/repos/lycheeverse/lychee/releases/latest | grep "browser_download_url.*lychee-${ARCH}-unknown-linux-gnu.tar.gz" | cut -d '"' -f 4 | xargs curl -L -o lychee.tar.gz
     tar -xzf lychee.tar.gz
-    sudo mv lychee /usr/local/bin/
+    mv lychee /usr/local/bin/
     rm lychee.tar.gz
-  when: lychee_check.rc != 0 and ansible_os_family == "Debian" and not ansible_check_mode
+  become: true
+  changed_when: true
+  when: not lychee_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
   tags: packages

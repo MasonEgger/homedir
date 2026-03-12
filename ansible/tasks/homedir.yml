@@ -1,18 +1,20 @@
 ---
 # .homedir Directory Installation Tasks
 - name: Check if .homedir directory exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ dotfiles_dir }}/.homedir"
   register: homedir_dir
   tags: homedir
 
 - name: Install .homedir directory
-  copy:
+  ansible.builtin.copy:
     src: "{{ dotfiles_dir }}/.homedir"
     dest: "{{ target_home }}/"
-    backup: no
+    backup: false
     mode: preserve
     directory_mode: '0755'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   when: homedir_dir.stat.exists
   become: "{{ target_user is defined }}"
   become_user: "{{ target_user | default(omit) }}"
@@ -20,9 +22,11 @@
   tags: homedir
 
 - name: Make .homedir scripts executable
-  file:
+  ansible.builtin.file:
     path: "{{ target_home }}/.homedir/{{ item | basename }}"
     mode: '0755'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
   with_fileglob:
     - "{{ target_home }}/.homedir/*"
   when: homedir_dir.stat.exists
