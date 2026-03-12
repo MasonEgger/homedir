@@ -28,49 +28,6 @@
   when: ansible_os_family == "Debian"
   tags: packages
 
-# Install Claude Code CLI
-# No versioned installer URL available — always installs latest
-- name: Check if Claude Code CLI is installed
-  ansible.builtin.stat:
-    path: "{{ target_home }}/.claude/local/bin/claude"
-  register: claude_cli_check
-  tags: packages
-
-- name: Install Claude Code CLI (target user)
-  ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
-  become: true
-  changed_when: true
-  when: target_user is defined and not claude_cli_check.stat.exists and not ansible_check_mode
-  tags: packages
-
-- name: Install Claude Code CLI (current user)
-  ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
-  changed_when: true
-  when: target_user is not defined and not claude_cli_check.stat.exists and not ansible_check_mode
-  tags: packages
-
-# Install uv Python package manager (installs to ~/.local/bin which isn't in Ansible's PATH)
-- name: Check if uv is installed
-  ansible.builtin.stat:
-    path: "{{ target_home }}/.local/bin/uv"
-  register: uv_check
-  tags: packages
-
-- name: Install uv Python package manager (target user)
-  ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
-  become: true
-  changed_when: true
-  when: target_user is defined and not uv_check.stat.exists and not ansible_check_mode
-  tags: packages
-
-- name: Install uv Python package manager (current user)
-  ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
-  changed_when: true
-  when: target_user is not defined and not uv_check.stat.exists and not ansible_check_mode
-  tags: packages
-
 # Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)
 - name: Check if kubectl is installed
   ansible.builtin.stat:

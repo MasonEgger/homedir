@@ -3,7 +3,7 @@
 # Creates the user, then re-uses existing task files targeting /home/mmegger.
 
 # =============================================================================
-# System packages (runs as root, shared across all users)
+# System packages (runs as root, no user needed)
 # =============================================================================
 
 - name: Include package management tasks for mmegger
@@ -13,7 +13,6 @@
       tags: mmegger
   vars:
     target_home: /home/mmegger
-    target_user: mmegger
   tags: mmegger
 
 - name: Include Vale tasks for mmegger (binary install is system-wide)
@@ -34,7 +33,7 @@
   tags: mmegger
 
 # =============================================================================
-# User creation
+# User creation (must happen before any task that runs as mmegger)
 # =============================================================================
 
 - name: Ensure zsh is installed before creating user
@@ -140,9 +139,9 @@
 # Per-user configs (re-use existing task files as mmegger)
 # =============================================================================
 
-- name: Include Oh My Zsh tasks for mmegger
+- name: Include user tool installs for mmegger (Oh My Zsh, Claude CLI, uv)
   ansible.builtin.include_tasks:
-    file: oh-my-zsh.yml
+    file: user-tools.yml
     apply:
       tags: mmegger
   vars:

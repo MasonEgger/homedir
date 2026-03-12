@@ -12,9 +12,9 @@
       ansible.builtin.include_tasks: tasks/packages.yml
       tags: packages
 
-    - name: Include Oh My Zsh tasks
-      ansible.builtin.include_tasks: tasks/oh-my-zsh.yml
-      tags: oh-my-zsh
+    - name: Include user tool installs (Oh My Zsh, Claude CLI, uv)
+      ansible.builtin.include_tasks: tasks/user-tools.yml
+      tags: user-tools
 
     - name: Include core dotfiles tasks
       ansible.builtin.include_tasks: tasks/dotfiles.yml
@@ -52,7 +52,7 @@
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
           - "Packages installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'packages' in ansible_run_tags else 'Skipped' }}"
-          - "Oh My Zsh installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'oh-my-zsh' in ansible_run_tags else 'Skipped' }}"
+          - "User tools installed (Oh My Zsh, Claude CLI, uv): {{ 'Yes' if ansible_run_tags == ['all'] or 'user-tools' in ansible_run_tags else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'claude' in ansible_run_tags else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'homedir' in ansible_run_tags else 'Skipped' }}"

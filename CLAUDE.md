@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a personal dotfiles/homedir configuration repository used to quickly set up a consistent development environment across different machines. The repository contains shell configurations, editor settings, and custom utility scripts.
+This is a personal dotfiles/homedir configuration repository used to quickly set up a consistent development environment across different machines. The repository contains shell configurations, editor settings, custom utility scripts, and Ansible automation to deploy them.
 
 ## Setup Method
 
@@ -23,33 +23,63 @@ ansible-playbook ansible/setup.yml                     # Install everything for 
 ansible-playbook ansible/setup.yml --tags mmegger       # Full mmegger user setup
 ```
 
-The `mmegger` tag is self-contained: installs all apt packages and system tools (vale, tailscale, kubectl, just, lychee), creates the user, sets zsh as default shell, installs Oh My Zsh, dotfiles, .claude directory, .homedir scripts, vale config, git hooks, Claude Code CLI, uv, and hardens SSH.
+The `mmegger` tag is self-contained: installs all system packages and tools, creates the user, sets up SSH with sshid.io keys, hardens SSH, then installs all per-user configs (Oh My Zsh, dotfiles, Claude CLI, uv, .claude directory, .homedir scripts, vale config, git hooks).
 
 **Modular Installation Options (sync scenario):**
 ```bash
-# Install specific components for the current user
-ansible-playbook ansible/setup.yml --tags packages     # Only install packages + Claude Code CLI
-ansible-playbook ansible/setup.yml --tags dotfiles     # Only install core dotfiles
-ansible-playbook ansible/setup.yml --tags claude       # Only install .claude directory
-ansible-playbook ansible/setup.yml --tags homedir      # Only install .homedir scripts
+ansible-playbook ansible/setup.yml --tags packages      # System packages only (apt/brew + kubectl, just, lychee)
+ansible-playbook ansible/setup.yml --tags user-tools    # Per-user curl installs (Oh My Zsh, Claude CLI, uv)
+ansible-playbook ansible/setup.yml --tags dotfiles      # Core dotfiles (.zshrc, .vimrc, .tmux.conf, .gitconfig)
+ansible-playbook ansible/setup.yml --tags claude        # .claude directory
+ansible-playbook ansible/setup.yml --tags homedir       # .homedir scripts
+ansible-playbook ansible/setup.yml --tags vale          # Vale prose linter
+ansible-playbook ansible/setup.yml --tags git-hooks     # Global git hooks
+ansible-playbook ansible/setup.yml --tags tailscale     # Tailscale VPN
 
-# Combine multiple components
+# Combine tags
 ansible-playbook ansible/setup.yml --tags packages,dotfiles
-ansible-playbook ansible/setup.yml --tags claude,homedir
 ```
 
 **Additional Options:**
 - `--check` - Preview changes without making them
 - `--diff` - Show detailed before/after diffs
 
-The Ansible setup features:
-- Two clear workflows: dev environment sync vs. fresh user provisioning
-- Modular installation: Install only the components you need
-- Cross-platform package management (Homebrew for macOS, apt for Ubuntu/Debian)
-- Claude Code CLI installed via curl for both scenarios
-- Automatically makes all scripts in `.homedir/` executable
-- Preserves the repository for future updates
-- Idempotent: Safe to run multiple times
+## Ansible Architecture
+
+### Task Organization
+
+`setup.yml` is orchestration-only — all logic lives in `ansible/tasks/`:
+
+| Tag | Task File | Scope | Description |
+|-----|-----------|-------|-------------|
+| `packages` | `packages.yml` | System | apt/brew packages, kubectl, just, lychee (all install to system paths) |
+| `user-tools` | `user-tools.yml` | Per-user | Oh My Zsh, Claude Code CLI, uv (all curl-based, install to `$HOME`) |
+| `dotfiles` | `dotfiles.yml` | Per-user | .zshrc, .vimrc, .tmux.conf, .gitconfig (with GPG/SSH key detection) |
+| `claude` | `claude.yml` | Per-user | .claude directory with settings and docs |
+| `homedir` | `homedir.yml` | Per-user | .homedir scripts, sets executable permissions |
+| `vale` | `vale.yml` | Mixed | Vale binary (system) + .vale.ini config (per-user) |
+| `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
+| `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
+| `mmegger` | `mmegger.yml` | Both | Full user provisioning — hidden tag (`[never, mmegger]`) |
+
+### Target User Pattern
+
+Task files support two modes via the `target_user` / `target_home` variables:
+
+- **Undefined** (sync scenario): runs as current user, no privilege escalation
+- **Defined** (mmegger scenario): `mmegger.yml` re-includes task files with `vars: { target_home: /home/mmegger, target_user: mmegger }`
+
+Per-user shell tasks (user-tools.yml) use `su - {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. Each task has two variants: `(target user)` and `(current user)`.
+
+### mmegger Provisioning Order
+
+The ordering in `mmegger.yml` matters:
+1. **System packages** (packages, vale binary, tailscale) — no user needed
+2. **User creation** (ensure zsh, create user, force password change)
+3. **SSH setup** (authorized_keys, sshid.io keys, key generation, SSH hardening)
+4. **Per-user configs** (user-tools, dotfiles, claude, homedir, git-hooks)
+
+Variables in `ansible/group_vars/all.yml` define package lists and defaults.
 
 ## Key Commands and Aliases
 
@@ -65,70 +95,20 @@ The Ansible setup features:
 ### Utilities
 - `uuid` - Generate a lowercase UUID with colorful output (requires `lolcat`)
 - `lmsify <file.md>` - Convert GitHub Flavored Markdown to HTML for LMS publication (requires `lessonmd` tool)
-- `wordcount <file>` - Count words in file, excluding Markdown code blocks. Supports various options:
-  - `-r, --recursive` - Process directories recursively  
-  - `-f, --format {text|json|csv}` - Output format
-  - `-o, --output FILE` - Save output to file
-  - `--no-exclude-code-blocks` - Count words in code blocks
+- `wordcount <file>` - Count words in file, excluding Markdown code blocks. Supports `-r` (recursive), `-f {text|json|csv}` (format), `-o FILE` (output), `--no-exclude-code-blocks`
 - `my-tools` - Display help for available custom tools
 
 ## Development Environment
 
-### Shell Configuration
-- **Shell**: Zsh with Oh My Zsh (geoffgarside theme)
-- **Plugins**: git
-- **Path additions**: `~/.homedir`, Java OpenJDK 20.0.2 (`~/OpenJDK/jdk-20.0.2.jdk/Contents/Home`)
-- **Integrations**: `thefuck` command correction tool, GPG TTY export
-- **Local configuration**: `~/.zshrc.local` for machine-specific settings (auto-created, git-ignored)
-
-### Editor Configuration
-- **Vim**: Line numbers, search highlighting, 80-char column marker, 4-space tabs, slate color scheme
-
-### Terminal Multiplexer Configuration (`.tmux.conf`)
-- **Mouse support**: Enabled for scrolling and pane selection
-- **Function key bindings**:
-  - `F2` - Create new window
-  - `F3` - Previous window
-  - `F4` - Next window
-  - `Ctrl+F2` - Horizontal split
-  - `Shift+F2` - Vertical split
-- **Pane navigation**: `Shift+Arrow` keys to move between panes
-- **Visual**: Magenta status bar with black text, colored pane borders
-- **Settings**: 10,000 line scrollback buffer, 256-color support, windows numbered from 1
-
-## File Structure
-
-```
-.
-├── .homedir/                    # Custom utility scripts
-│   ├── lmsify                   # Markdown to HTML converter (bash script)
-│   ├── my-tools                 # Tool help display (bash script)
-│   └── wordcount                # Word count utility (Python script using uv)
-├── ansible/                     # Ansible automation setup
-│   ├── setup.yml                # Main Ansible playbook
-│   ├── tasks/                   # Modular task definitions
-│   └── group_vars/              # Variable definitions
-├── .tmux.conf                   # Tmux terminal multiplexer configuration
-├── .vimrc                       # Vim configuration
-├── .zshrc                       # Zsh configuration with aliases
-├── .zshrc.local.example         # Template for machine-specific zsh configuration
-├── CLAUDE.md                    # This file
-└── README.md                    # Repository documentation
-```
-
-## Working with This Repository
-
-When making changes to this repository:
-1. Test any new aliases or scripts locally before committing
-2. Ensure shell scripts are executable (`chmod +x`)
-3. Update README.md for user-facing changes
-4. Be mindful that this repository is used across multiple machines - avoid machine-specific configurations
-5. Never commit sensitive information (API keys, tokens)
+- **Shell**: Zsh with Oh My Zsh (geoffgarside theme), `thefuck` integration, GPG TTY export
+- **Path**: `~/.homedir` added to PATH; JAVA_HOME detected dynamically (Homebrew or `/usr/lib/jvm/default-java`)
+- **Local overrides**: `~/.zshrc.local` sourced at end of `.zshrc` (git-ignored, auto-created by Ansible)
+- **Editor**: Vim with line numbers, search highlighting, 80-char column marker, 4-space tabs
+- **Tmux**: Mouse support, function key bindings (F2-F4), magenta status bar, 10k scrollback
 
 ## Commands for Development
 
 ### Testing and Validation
-To test changes to utility scripts and configurations:
 ```bash
 # Test utility scripts after modification
 .homedir/my-tools                    # Should display help text
@@ -138,18 +118,13 @@ To test changes to utility scripts and configurations:
 
 # Verify aliases work after .zshrc changes
 source ~/.zshrc
-uuid                                 # Should generate colored UUID (requires lolcat)
-cdr                                  # Should navigate to git repository root
-venv-on                              # Should activate .venv if it exists
 
-# Test configuration files
-vim                                  # Should show line numbers, 80-char column marker
-tmux                                 # Should use magenta status bar with function key bindings
+# Validate Ansible playbook syntax
+ansible-playbook ansible/setup.yml --check --diff
 ```
 
 ### Repository Maintenance
 ```bash
-# Keep repository in sync after setup
 cd ~/homedir
 git pull origin main
 ansible-playbook ansible/setup.yml  # Re-run to update files
@@ -158,9 +133,8 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 ## Common Tasks
 
 ### Adding a New Alias
-1. Edit `.zshrc`
-2. Add the alias in the appropriate section (around lines 18-27)
-3. Test by sourcing: `source ~/.zshrc`
+1. Edit `.zshrc`, add the alias in the appropriate section
+2. Test by sourcing: `source ~/.zshrc`
 
 ### Adding a New Utility Script
 **Always write new homedir scripts in Python following the guidelines in `~/.claude/docs/python.md`:**
@@ -174,60 +148,8 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 4. Update `my-tools` script to include the new tool in help output
 5. Update README.md to document the new tool
 
-### Modifying Vim Configuration
-1. Edit `.vimrc`
-2. Test changes by reopening vim or running `:source ~/.vimrc`
-
-### Using Machine-Specific Configuration (.zshrc.local)
-The `.zshrc.local` file allows you to add machine-specific settings without modifying the tracked `.zshrc` file:
-
-**Purpose**: Store machine-specific settings that should NOT be committed to the repository:
-- API keys and secrets
-- Machine-specific PATH additions
-- Local aliases for specific projects
-- Environment variables for local development
-- Overrides to repository defaults
-
-**Setup**:
-1. The file is automatically created during Ansible setup if it doesn't exist
-2. It's ignored by git (listed in `.gitignore`)
-3. Safe to run `ansible-playbook` multiple times - won't overwrite existing `.zshrc.local`
-
-**Usage**:
-```bash
-# Edit your local configuration
-vim ~/.zshrc.local
-
-# Example content:
-export OPENAI_API_KEY="sk-..."
-alias myproject="cd ~/Projects/my-special-project"
-export PATH="$HOME/bin:$PATH"
-```
-
-**Reference**: See `.zshrc.local.example` in the repository for more examples
-
-**Important**: `.zshrc.local` is sourced at the END of `.zshrc`, so settings here will override repository defaults
-
-## Dependencies
-
-- **Required**: Zsh, Oh My Zsh
-- **Optional**: 
-  - `lolcat` - For colorful UUID output
-  - `lessonmd` - For `lmsify` command
-  - `uv` - For `wordcount` Python script execution
-  - `thefuck` - For command correction
-  - Java OpenJDK 20.0.2 - If using Java development
-
-## Architecture Notes
-
-### Ansible Setup Behavior
-The Ansible playbook preserves the cloned repository in `~/homedir/` after installation. This allows for:
-- Easy updates via `git pull` and re-running the playbook
-- Version control tracking of dotfile changes
-
-### Script Execution Model
-- Shell scripts in `.homedir/` are made executable automatically during Ansible setup
-- Python scripts use `uv` for execution (e.g., `wordcount` uses `#!/usr/bin/env -S uv run --script`)
-- All scripts assume they're run from any directory (use absolute paths internally)
-- The `wordcount` script supports multiple output formats (text, JSON, CSV) and advanced options for markdown processing
-
+### Adding a New Ansible Task
+1. Create a new task file in `ansible/tasks/`
+2. Add an `include_tasks` entry in `setup.yml` with a tag
+3. If it should run during mmegger provisioning, add an include in `mmegger.yml` at the appropriate point in the ordering (system vs. per-user)
+4. Update the installation summary in `setup.yml`
