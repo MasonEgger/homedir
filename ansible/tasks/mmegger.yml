@@ -117,10 +117,10 @@
   register: sshd_config_changed
   tags: mmegger
 
-- name: Restart sshd after config change
+- name: Reload ssh after config change
   ansible.builtin.service:
-    name: sshd
-    state: restarted
+    name: ssh
+    state: reloaded
   become: true
   when: sshd_config_changed.changed | default(false)
   tags: mmegger
