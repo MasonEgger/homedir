@@ -44,6 +44,15 @@
   become: true
   tags: mmegger
 
+- name: Ensure /home/mmegger is owned by mmegger
+  ansible.builtin.file:
+    path: /home/mmegger
+    owner: mmegger
+    group: mmegger
+    state: directory
+  become: true
+  tags: mmegger
+
 # =============================================================================
 # SSH setup and hardening
 # =============================================================================
