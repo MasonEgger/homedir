@@ -1,0 +1,74 @@
+#!/usr/bin/env -S uv run --script
+# ABOUTME: Install or update Claude Code plugins from the official marketplace.
+# Loops through a defined list, installing missing plugins and updating existing ones.
+
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+
+"""Install or update Claude Code plugins from the official marketplace."""
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+MARKETPLACE = "claude-plugins-official"
+
+PLUGINS = [
+    "asana",
+    "discord",
+    "frontend-design",
+    "playground",
+    "playwright",
+    "plugin-dev",
+    "skill-creator",
+    "slack",
+    "telegram",
+]
+
+
+def get_installed_plugins() -> set[str]:
+    """Return set of plugin names currently installed."""
+    installed_file = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+    if not installed_file.exists():
+        return set()
+    data = json.loads(installed_file.read_text())
+    # Keys are "plugin-name@marketplace"
+    return {key.split("@")[0] for key in data.get("plugins", {})}
+
+
+def run_claude_plugin(action: str, plugin: str) -> bool:
+    """Run a claude plugin command, return True on success."""
+    qualified = f"{plugin}@{MARKETPLACE}"
+    result = subprocess.run(
+        ["claude", "plugin", action, qualified],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"  FAILED: {result.stderr.strip() or result.stdout.strip()}")
+        return False
+    return True
+
+
+def main() -> None:
+    """Entry point."""
+    installed = get_installed_plugins()
+
+    for plugin in PLUGINS:
+        if plugin in installed:
+            print(f"Updating {plugin}...", end=" ")
+            if run_claude_plugin("update", plugin):
+                print("done")
+        else:
+            print(f"Installing {plugin}...", end=" ")
+            if run_claude_plugin("install", plugin):
+                print("done")
+
+    print("\nRun /reload-plugins in Claude Code to activate changes.")
+
+
+if __name__ == "__main__":
+    main()
