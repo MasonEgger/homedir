@@ -1,0 +1,219 @@
+---
+# ABOUTME: Full mmegger user setup on Debian/Ubuntu systems.
+# Creates the user, then re-uses existing task files targeting /home/mmegger.
+
+# =============================================================================
+# System packages (runs as root, no user needed)
+# =============================================================================
+
+- name: Include package management tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: packages.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+  tags: mmegger
+
+- name: Include Tailscale tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: tailscale.yml
+    apply:
+      tags: mmegger
+  tags: mmegger
+
+# =============================================================================
+# User creation (must happen before any task that runs as mmegger)
+# =============================================================================
+
+- name: Ensure zsh is installed before creating user
+  ansible.builtin.apt:
+    name: zsh
+    state: present
+  become: true
+  tags: mmegger
+
+- name: Create mmegger user with sudo privileges
+  ansible.builtin.user:
+    name: mmegger
+    shell: /bin/zsh
+    groups: sudo
+    append: true
+    create_home: true
+    password: "{{ 'changeme123' | password_hash('sha512') }}"
+  become: true
+  tags: mmegger
+
+- name: Ensure /home/mmegger is owned by mmegger
+  ansible.builtin.file:
+    path: /home/mmegger
+    owner: mmegger
+    group: mmegger
+    state: directory
+  become: true
+  tags: mmegger
+
+# =============================================================================
+# SSH setup and hardening
+# =============================================================================
+
+- name: Create .ssh directory for mmegger
+  ansible.builtin.file:
+    path: /home/mmegger/.ssh
+    state: directory
+    owner: mmegger
+    group: mmegger
+    mode: '0700'
+  become: true
+  tags: mmegger
+
+- name: Copy root authorized_keys to mmegger
+  ansible.builtin.copy:
+    src: /root/.ssh/authorized_keys
+    dest: /home/mmegger/.ssh/authorized_keys
+    remote_src: true
+    owner: mmegger
+    group: mmegger
+    mode: '0600'
+  become: true
+  tags: mmegger
+
+- name: Fetch sshid.io keys for mmegger
+  ansible.builtin.uri:
+    url: https://sshid.io/mmegger
+    return_content: true
+  register: sshid_keys
+  become: true
+  tags: mmegger
+
+- name: Add sshid.io keys for mmegger
+  ansible.builtin.authorized_key:
+    user: mmegger
+    key: "{{ item }}"
+    state: present
+  loop: "{{ sshid_keys.content.splitlines() | select('match', '^ssh-') | list }}"
+  become: true
+  tags: mmegger
+
+- name: Check if SSH key exists for mmegger
+  ansible.builtin.stat:
+    path: /home/mmegger/.ssh/id_ed25519
+  register: mmegger_ssh_key
+  become: true
+  tags: mmegger
+
+- name: Generate SSH key for mmegger
+  ansible.builtin.command:
+    cmd: ssh-keygen -t ed25519 -C "mason@masonegger.com" -f /home/mmegger/.ssh/id_ed25519 -N ""
+  become: true
+  become_user: mmegger
+  when: not mmegger_ssh_key.stat.exists
+  changed_when: true
+  tags: mmegger
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  become: true
+  register: sshd_config_changed
+  tags: mmegger
+
+- name: Reload ssh after config change
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
+  become: true
+  when: sshd_config_changed.changed | default(false)
+  tags: mmegger
+
+# =============================================================================
+# Per-user configs (re-use existing task files as mmegger)
+# =============================================================================
+
+- name: Include user tool installs for mmegger (Oh My Zsh, Claude CLI, uv)
+  ansible.builtin.include_tasks:
+    file: user-tools.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include Vale tasks for mmegger (binary + per-user config)
+  ansible.builtin.include_tasks:
+    file: vale.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include dotfiles tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: dotfiles.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include .claude directory tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: claude.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include .homedir directory tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: homedir.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Include git hooks tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: git-hooks.yml
+    apply:
+      tags: mmegger
+  vars:
+    target_home: /home/mmegger
+    target_user: mmegger
+  tags: mmegger
+
+- name: Force password change on next login
+  ansible.builtin.command: chage -d 0 mmegger
+  become: true
+  changed_when: true
+  tags: mmegger
+
+- name: Read mmegger SSH public key
+  ansible.builtin.slurp:
+    src: /home/mmegger/.ssh/id_ed25519.pub
+  register: mmegger_ssh_pubkey
+  become: true
+  tags: mmegger
+
+- name: Display mmegger SSH public key
+  ansible.builtin.debug:
+    msg:
+      - "============================================"
+      - "SSH public key for mmegger:"
+      - "{{ mmegger_ssh_pubkey.content | b64decode | trim }}"
+      - ""
+      - "Add this key to GitHub:"
+      - "  1. https://github.com/settings/keys (Authentication)"
+      - "  2. https://github.com/settings/ssh/new (Signing)"
+      - "============================================"
+  tags: mmegger

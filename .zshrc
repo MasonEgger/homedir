@@ -5,7 +5,14 @@
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 export PATH=$HOME/.local/bin:$HOME/.homedir:$PATH
-export JAVA_HOME=$HOME/OpenJDK/jdk-20.0.2.jdk/Contents/Home
+# Set JAVA_HOME: Homebrew openjdk on macOS, default-jdk on Linux
+if [[ -d "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home" ]]; then
+  export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+elif [[ -d "/usr/local/opt/openjdk/libexec/openjdk.jdk/Contents/Home" ]]; then
+  export JAVA_HOME="/usr/local/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+elif [[ -d "/usr/lib/jvm/default-java" ]]; then
+  export JAVA_HOME="/usr/lib/jvm/default-java"
+fi
 export PATH=$JAVA_HOME/bin:$PATH
 
 # Set name of the theme to load --- if set to "random", it will
@@ -66,6 +73,12 @@ fi
 
 export GPG_TTY=$(tty)
 gpgconf --launch gpg-agent
+
+# macOS-specific configuration
+if [[ "$(uname)" == "Darwin" ]]; then
+    # Use Tailscale.app CLI instead of brew-installed tailscale
+    alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+fi
 
 # Source machine-specific configuration if it exists
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

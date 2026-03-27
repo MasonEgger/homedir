@@ -16,6 +16,7 @@ brew_packages:
   - gnupg
   - go
   - gradle
+  - openjdk
   - httpie
   - jq
   - just
@@ -31,6 +32,7 @@ brew_packages:
   - rust
   - temporal
   - thefuck
+  - tmux
   - vale
   - yarn
 
@@ -45,6 +47,7 @@ apt_packages:
   - gnupg
   - golang-go
   - gradle
+  - default-jdk
   - httpie
   - jq
   - lolcat
@@ -52,11 +55,16 @@ apt_packages:
   - nodejs
   - python3
   - python3-pip
-  - qemu
+  - qemu-system
   - ripgrep
   - ruby
   - rustc
+  - tmux
   - yarn
+  - zsh
 
 # Root directory for dotfiles (parent of ansible directory)
 dotfiles_dir: "{{ playbook_dir | dirname }}"
+
+# Target home directory for per-user installs (overridden by mmegger tag)
+target_home: "{{ ansible_user_dir }}"

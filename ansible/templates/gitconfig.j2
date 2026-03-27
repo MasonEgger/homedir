@@ -1,17 +1,22 @@
 [user]
         name = Mason Egger
         email = mason@masonegger.com
-{% if gpg_signing_key is defined and gpg_signing_key != '' %}
+{% if ssh_signing_key is defined and ssh_signing_key != '' %}
+        signingkey = {{ ssh_signing_key }}
+{% elif gpg_signing_key is defined and gpg_signing_key != '' %}
         signingkey = {{ gpg_signing_key }}
 {% else %}
-        # signingkey = YOUR_KEY_HERE  # No GPG key found - run: gpg --list-secret-keys --keyid-format=long
+        # signingkey not configured - no SSH or GPG key found
 {% endif %}
 [commit]
-{% if gpg_signing_key is defined and gpg_signing_key != '' %}
+{% if (ssh_signing_key is defined and ssh_signing_key != '') or (gpg_signing_key is defined and gpg_signing_key != '') %}
         gpgsign = true
 {% else %}
-        # gpgsign = true  # Disabled - no GPG key found
         gpgsign = false
+{% endif %}
+{% if ssh_signing_key is defined and ssh_signing_key != '' %}
+[gpg]
+        format = ssh
 {% endif %}
 [pull]
         rebase = true
