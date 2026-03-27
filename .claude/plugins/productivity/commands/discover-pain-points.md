@@ -1,3 +1,7 @@
+---
+description: "Evaluate sales discovery calls to identify the highest-leverage changes for improving discovery effectiveness"
+---
+
 # Sales Discovery Evaluation
 
 Evaluate sales discovery calls to identify the 1-3 HIGHEST LEVERAGE changes for improving discovery effectiveness.

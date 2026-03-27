@@ -1,0 +1,8 @@
+{
+  "name": "productivity",
+  "version": "0.1.0",
+  "description": "Personal productivity system — Obsidian vault management, Todoist integration, journaling, customer tracking, and knowledge base maintenance.",
+  "author": {
+    "name": "Mason Egger"
+  }
+}

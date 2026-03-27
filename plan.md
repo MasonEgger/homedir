@@ -50,13 +50,15 @@ Review each item and mark the **Action** column with one of:
 
 | # | Item | Location | Description | Action |
 |---|------|----------|-------------|--------|
-| 13 | `transcript-2-journal` | commands/journal/transcript-2-journal.md | Convert voice transcripts to Obsidian journal entries | |
+| 13 | `transcript-2-journal` | commands/journal/transcript-2-journal.md | Convert voice transcripts to Obsidian journal entries | **plugin** → productivity |
+| 15 | `eod` | commands/journal/eod.md | EOD brain dump — voice transcript + Todoist sync + vault routing | **plugin** → productivity |
+| 16 | `todoist-sync` | commands/journal/todoist-sync.md | Pull completed & pending Todoist tasks into journal | **plugin** → productivity |
 
 ### Commands — customers
 
 | # | Item | Location | Description | Action |
 |---|------|----------|-------------|--------|
-| 14 | `discover-pain-points` | commands/customers/discover-pain-points.md | Evaluate sales discovery calls (Temporal-focused) | |
+| 14 | `discover-pain-points` | commands/customers/discover-pain-points.md | Evaluate sales discovery calls (Temporal-focused) | **plugin** → productivity |
 
 ## Open Questions
 
