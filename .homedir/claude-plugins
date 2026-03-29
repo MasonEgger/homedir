@@ -1,94 +1,87 @@
 #!/usr/bin/env -S uv run --script
-# ABOUTME: Install or update Claude Code plugins from the official marketplace.
-# Loops through a defined list, installing missing plugins and updating existing ones.
+# ABOUTME: Install or update Claude Code plugins from multiple marketplaces.
+# Ensures marketplaces are configured, then installs/updates each plugin.
 
 # /// script
 # requires-python = ">=3.12"
 # dependencies = []
 # ///
 
-"""Install or update Claude Code plugins from the official marketplace."""
+"""Install or update Claude Code plugins from multiple marketplaces."""
 
-import json
 import subprocess
 import sys
-from pathlib import Path
 
-OFFICIAL_MARKETPLACE = "claude-plugins-official"
-PERSONAL_MARKETPLACE = "mason-claude-plugins"
-PERSONAL_MARKETPLACE_REPO = "MasonEgger/claude-code-plugin"
-
-OFFICIAL_PLUGINS = [
-    "asana",
-    "discord",
-    "frontend-design",
-    "playground",
-    "playwright",
-    "plugin-dev",
-    "skill-creator",
-    "slack",
-    "telegram",
+MARKETPLACES: list[tuple[str, str]] = [
+    # (name, github_repo)
+    ("claude-plugins-official", "anthropics/claude-plugins-official"),
+    ("mason-claude-plugins", "MasonEgger/claude-code-plugin"),
 ]
 
-PERSONAL_PLUGINS = [
-    "bpe",
-    "writing",
-    "productivity",
+PLUGINS: list[tuple[str, str]] = [
+    # (plugin_name, marketplace)
+    ("asana", "claude-plugins-official"),
+    ("discord", "claude-plugins-official"),
+    ("frontend-design", "claude-plugins-official"),
+    ("playground", "claude-plugins-official"),
+    ("playwright", "claude-plugins-official"),
+    ("plugin-dev", "claude-plugins-official"),
+    ("skill-creator", "claude-plugins-official"),
+    ("slack", "claude-plugins-official"),
+    ("telegram", "claude-plugins-official"),
+    ("bpe", "mason-claude-plugins"),
+    ("productivity", "mason-claude-plugins"),
+    ("writing", "mason-claude-plugins"),
 ]
 
 
-def get_installed_plugins() -> set[str]:
-    """Return set of plugin names currently installed."""
-    installed_file = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
-    if not installed_file.exists():
-        return set()
-    data = json.loads(installed_file.read_text())
-    # Keys are "plugin-name@marketplace"
-    return {key.split("@")[0] for key in data.get("plugins", {})}
-
-
-def run_claude(args: list[str]) -> bool:
-    """Run a claude CLI command, return True on success."""
-    result = subprocess.run(
+def run_claude(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run a claude CLI command and return the result."""
+    return subprocess.run(
         ["claude", *args],
         capture_output=True,
         text=True,
     )
-    if result.returncode != 0:
-        print(f"  FAILED: {result.stderr.strip() or result.stdout.strip()}")
-        return False
-    return True
 
 
-def ensure_personal_marketplace() -> None:
-    """Register the personal marketplace if not already present."""
-    print(f"Registering personal marketplace ({PERSONAL_MARKETPLACE_REPO})...", end=" ")
-    if run_claude(["plugin", "marketplace", "add", PERSONAL_MARKETPLACE_REPO]):
-        print("done")
-
-
-def sync_plugins(plugins: list[str], marketplace: str) -> None:
-    """Install or update a list of plugins from a marketplace."""
-    installed = get_installed_plugins()
-    for plugin in plugins:
-        qualified = f"{plugin}@{marketplace}"
-        if plugin in installed:
-            print(f"Updating {plugin}...", end=" ")
-            if run_claude(["plugin", "update", qualified]):
-                print("done")
+def ensure_marketplaces() -> bool:
+    """Ensure all required marketplaces are configured. Return False on failure."""
+    ok = True
+    for name, repo in MARKETPLACES:
+        print(f"Ensuring marketplace {name}...", end=" ", flush=True)
+        result = run_claude(["plugin", "marketplace", "add", repo])
+        if result.returncode != 0:
+            print(f"FAILED: {result.stderr.strip() or result.stdout.strip()}")
+            ok = False
         else:
-            print(f"Installing {plugin}...", end=" ")
-            if run_claude(["plugin", "install", qualified]):
-                print("done")
+            print("ok")
+    return ok
+
+
+def sync_plugins() -> None:
+    """Install or update each plugin."""
+    for plugin, marketplace in PLUGINS:
+        qualified = f"{plugin}@{marketplace}"
+        print(f"Syncing {plugin} ({marketplace})...", end=" ", flush=True)
+        # install is idempotent — succeeds even if already installed
+        result = run_claude(["plugin", "install", qualified])
+        if result.returncode != 0:
+            print(f"FAILED: {result.stderr.strip() or result.stdout.strip()}")
+            continue
+        # update to latest version
+        result = run_claude(["plugin", "update", qualified])
+        if result.returncode != 0:
+            print(f"installed, but update FAILED: {result.stderr.strip() or result.stdout.strip()}")
+        else:
+            print("done")
 
 
 def main() -> None:
     """Entry point."""
-    ensure_personal_marketplace()
-    print("\n--- Official plugins ---")
-    sync_plugins(OFFICIAL_PLUGINS, OFFICIAL_MARKETPLACE)
-    print("\n--- Personal plugins ---")
-    sync_plugins(PERSONAL_PLUGINS, PERSONAL_MARKETPLACE)
+    if not ensure_marketplaces():
+        print("\nMarketplace setup had errors. Continuing with available marketplaces...\n")
+
+    sync_plugins()
     print("\nRun /reload-plugins in Claude Code to activate changes.")
 
 
