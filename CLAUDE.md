@@ -55,7 +55,7 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `packages` | `packages.yml` | System | apt/brew packages, kubectl, just, lychee (all install to system paths) |
 | `user-tools` | `user-tools.yml` | Per-user | Oh My Zsh, Claude Code CLI, uv (all curl-based, install to `$HOME`) |
 | `dotfiles` | `dotfiles.yml` | Per-user | .zshrc, .vimrc, .tmux.conf, .gitconfig (with GPG/SSH key detection) |
-| `claude` | `claude.yml` | Per-user | .claude directory with settings and docs |
+| `claude` | `claude.yml` | Per-user | .claude directory (settings, skills) + plugin installation from marketplace |
 | `homedir` | `homedir.yml` | Per-user | .homedir scripts, sets executable permissions |
 | `vale` | `vale.yml` | Mixed | Vale binary (system) + .vale.ini config (per-user) |
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
@@ -137,7 +137,7 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 2. Test by sourcing: `source ~/.zshrc`
 
 ### Adding a New Utility Script
-**Always write new homedir scripts in Python following the guidelines in `~/.claude/docs/python.md`:**
+**Always write new homedir scripts in Python following the guidelines in the Python skill (`.claude/skills/python/`):**
 1. Create Python script in `.homedir/` with PEP 723 inline metadata:
    - Use `#!/usr/bin/env -S uv run --script` shebang
    - Include `# /// script` metadata block with dependencies

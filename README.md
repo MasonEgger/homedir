@@ -117,56 +117,31 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 | `lmsify` | Convert GitHub Flavored Markdown to HTML for LMS publication (copies to clipboard using `pbcopy`) | `<file.md>` - Markdown file to convert | `lmsify lesson.md` |
 | `wordcount` | Count words in files/directories, excluding Markdown code blocks | `<path> [options]` - File or directory to process with various options | `wordcount README.md` or `wordcount . -r -f json` |
 | `my-tools` | Display help for available custom tools | None | `my-tools` |
+| `claude-plugins` | Install or update Claude Code plugins from official and personal marketplaces | None | `claude-plugins` |
 
 ### Claude Settings (`.claude/`)
 
-| File | Description | Contents |
-|------|-------------|----------|
-| `settings.json` | Global Claude configuration | Basic settings for Claude behavior |
-| `CLAUDE.md` | Claude-specific documentation | Detailed instructions for Claude AI assistant (separate from root CLAUDE.md) |
-| `commands/` | Directory containing Claude command definitions | Custom commands and workflows |
-| `docs/` | Additional Claude documentation | Extended documentation and examples |
+| File | Description |
+|------|-------------|
+| `CLAUDE.md` | Development guidelines for Claude AI assistant (separate from root CLAUDE.md) |
+| `settings.json` | Global Claude Code configuration |
+| `skills/python/` | Python development standards skill (toolchain, TDD, CLI scripts, documentation) |
 
-#### Custom Claude Commands (`.claude/commands/`)
-
-| Command | Description | Arguments |
-|---------|-------------|-----------|
-| `brainstorm` | Interactive specification development through iterative questioning | None |
-| `do-gh-issue` | Retrieve GitHub issue, validate, plan, and implement solution with tests | GitHub issue number |
-| `do-prompt-plan` | Execute incomplete prompts from @prompt_plan.md with testing and commits | None (reads from @prompt_plan.md) |
-| `do-todo` | Work through unchecked items in @todo.md with comprehensive implementation | None (reads from @todo.md) |
-| `find-missing-tests` | Analyze code for missing test cases and create test coverage improvement plan | None (analyzes current codebase) |
-| `lyra` | AI prompt optimization specialist using 4-D methodology (Deconstruct, Diagnose, Develop, Deliver) | Target AI platform, prompt style (DETAIL/BASIC), rough prompt |
-| `plan` | Create detailed project blueprint with iterative, test-driven implementation steps | Project specification file path |
-| `session-summary` | Generate comprehensive session summary with costs, insights, and improvements | None |
-| `setup` | Configure Python project with uv, workflow guidelines, testing, and linting requirements | None (configures current project) |
-
-#### Claude Documentation (`.claude/docs/`)
-
-| Document | Description | Contents |
-|----------|-------------|----------|
-| `python.md` | Python development guidelines and standards | Modern Pythonic style, type hints, tools (ruff, mypy, pytest, uv), strict mode requirements |
+Claude Code plugins (BPE workflow, writing toolkit, productivity commands) live in a separate repository: [MasonEgger/claude-code-plugin](https://github.com/MasonEgger/claude-code-plugin). The `claude-plugins` script in `.homedir/` handles installing them from that marketplace.
 
 ## File Structure
 
 ```
 .
 ├── .claude/                      # Claude AI assistant configuration
-│   ├── CLAUDE.md                 # Claude-specific documentation  
-│   ├── commands/                 # Custom Claude commands
-│   │   ├── brainstorm.md         # Interactive specification development
-│   │   ├── do-gh-issue.md        # GitHub issue resolution workflow
-│   │   ├── do-prompt-plan.md     # Execute prompt plans with testing
-│   │   ├── do-todo.md            # Todo list execution workflow
-│   │   ├── find-missing-tests.md # Test coverage analysis
-│   │   ├── lyra.md               # AI prompt optimization specialist
-│   │   ├── plan.md               # Project planning and blueprints
-│   │   ├── session-summary.md    # Session documentation generator
-│   │   └── setup.md              # Python project configuration
-│   ├── docs/                     # Additional Claude documentation
-│   │   └── python.md             # Python development guidelines
-│   └── settings.json             # Global Claude settings
+│   ├── CLAUDE.md                 # Claude-specific documentation
+│   ├── settings.json             # Global Claude settings
+│   └── skills/                   # Claude Code skills
+│       └── python/               # Python development standards
+│           ├── SKILL.md
+│           └── references/       # Toolchain, TDD, CLI, docs guides
 ├── .homedir/                     # Custom utility scripts
+│   ├── claude-plugins            # Claude Code plugin installer
 │   ├── lmsify                    # Markdown to HTML converter
 │   ├── my-tools                  # Tool help display
 │   └── wordcount                 # Word count utility
@@ -175,14 +150,18 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 │   ├── group_vars/               # Variable definitions
 │   │   └── all.yml               # Package lists and configuration
 │   ├── tasks/                    # Modular task definitions
-│   │   ├── packages.yml          # Package management tasks
+│   │   ├── packages.yml          # System packages (apt/brew)
+│   │   ├── user-tools.yml        # Per-user tools (Oh My Zsh, Claude CLI, uv)
 │   │   ├── dotfiles.yml          # Core dotfiles installation
-│   │   ├── claude.yml            # Claude directory installation
-│   │   └── homedir.yml           # Homedir scripts installation
+│   │   ├── claude.yml            # .claude directory + plugin installation
+│   │   ├── homedir.yml           # .homedir scripts installation
+│   │   ├── vale.yml              # Vale prose linter
+│   │   ├── git-hooks.yml         # Global git hooks
+│   │   ├── tailscale.yml         # Tailscale VPN
+│   │   └── mmegger.yml           # Full user provisioning
 │   ├── ansible.cfg               # Ansible configuration
 │   ├── hosts                     # Localhost inventory
-│   ├── requirements.yml          # External role dependencies
-│   └── README.md                 # Ansible usage documentation
+│   └── requirements.yml          # External role dependencies
 ├── .tmux.conf                    # Tmux terminal multiplexer configuration
 ├── .vimrc                        # Vim configuration
 ├── .zshrc                        # Zsh configuration with aliases

@@ -19,3 +19,15 @@
   become: "{{ target_user is defined }}"
   register: claude_files_installed
   tags: claude
+
+- name: Install Claude Code plugins (target user)
+  ansible.builtin.shell: |
+    su - {{ target_user }} -c "{{ target_home }}/.homedir/claude-plugins"
+  when: target_user is defined
+  become: true
+  tags: claude
+
+- name: Install Claude Code plugins (current user)
+  ansible.builtin.command: "{{ dotfiles_dir }}/.homedir/claude-plugins"
+  when: target_user is not defined
+  tags: claude

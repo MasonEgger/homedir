@@ -14,9 +14,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-MARKETPLACE = "claude-plugins-official"
+OFFICIAL_MARKETPLACE = "claude-plugins-official"
+PERSONAL_MARKETPLACE = "mason-claude-plugins"
+PERSONAL_MARKETPLACE_REPO = "MasonEgger/claude-code-plugin"
 
-PLUGINS = [
+OFFICIAL_PLUGINS = [
     "asana",
     "discord",
     "frontend-design",
@@ -26,6 +28,12 @@ PLUGINS = [
     "skill-creator",
     "slack",
     "telegram",
+]
+
+PERSONAL_PLUGINS = [
+    "bpe",
+    "writing",
+    "productivity",
 ]
 
 
@@ -39,11 +47,10 @@ def get_installed_plugins() -> set[str]:
     return {key.split("@")[0] for key in data.get("plugins", {})}
 
 
-def run_claude_plugin(action: str, plugin: str) -> bool:
-    """Run a claude plugin command, return True on success."""
-    qualified = f"{plugin}@{MARKETPLACE}"
+def run_claude(args: list[str]) -> bool:
+    """Run a claude CLI command, return True on success."""
     result = subprocess.run(
-        ["claude", "plugin", action, qualified],
+        ["claude", *args],
         capture_output=True,
         text=True,
     )
@@ -53,20 +60,35 @@ def run_claude_plugin(action: str, plugin: str) -> bool:
     return True
 
 
-def main() -> None:
-    """Entry point."""
-    installed = get_installed_plugins()
+def ensure_personal_marketplace() -> None:
+    """Register the personal marketplace if not already present."""
+    print(f"Registering personal marketplace ({PERSONAL_MARKETPLACE_REPO})...", end=" ")
+    if run_claude(["plugin", "marketplace", "add", PERSONAL_MARKETPLACE_REPO]):
+        print("done")
 
-    for plugin in PLUGINS:
+
+def sync_plugins(plugins: list[str], marketplace: str) -> None:
+    """Install or update a list of plugins from a marketplace."""
+    installed = get_installed_plugins()
+    for plugin in plugins:
+        qualified = f"{plugin}@{marketplace}"
         if plugin in installed:
             print(f"Updating {plugin}...", end=" ")
-            if run_claude_plugin("update", plugin):
+            if run_claude(["plugin", "update", qualified]):
                 print("done")
         else:
             print(f"Installing {plugin}...", end=" ")
-            if run_claude_plugin("install", plugin):
+            if run_claude(["plugin", "install", qualified]):
                 print("done")
 
+
+def main() -> None:
+    """Entry point."""
+    ensure_personal_marketplace()
+    print("\n--- Official plugins ---")
+    sync_plugins(OFFICIAL_PLUGINS, OFFICIAL_MARKETPLACE)
+    print("\n--- Personal plugins ---")
+    sync_plugins(PERSONAL_PLUGINS, PERSONAL_MARKETPLACE)
     print("\nRun /reload-plugins in Claude Code to activate changes.")
 
 
