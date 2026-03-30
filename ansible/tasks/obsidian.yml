@@ -1,0 +1,62 @@
+---
+# ABOUTME: Obsidian installation tasks for macOS and Linux.
+# Installs the Obsidian desktop app and symlinks obsidian-cli to PATH.
+
+# macOS - install via Homebrew cask
+- name: Install Obsidian via Homebrew cask (macOS)
+  community.general.homebrew_cask:
+    name: obsidian
+    state: present
+  when: ansible_os_family == "Darwin"
+  tags: obsidian
+
+- name: Symlink obsidian-cli to Homebrew bin (macOS)
+  ansible.builtin.file:
+    src: /Applications/Obsidian.app/Contents/MacOS/obsidian-cli
+    dest: /opt/homebrew/bin/obsidian-cli
+    state: link
+  when: ansible_os_family == "Darwin" and not ansible_check_mode
+  tags: obsidian
+
+# Linux (Debian/Ubuntu) - install from GitHub releases .deb
+- name: Check if Obsidian is installed (Debian/Ubuntu)
+  ansible.builtin.stat:
+    path: /opt/Obsidian/obsidian-cli
+  register: obsidian_check
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Get latest Obsidian version from GitHub (Debian/Ubuntu)
+  ansible.builtin.shell: >-
+    curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest
+    | grep '"tag_name"' | cut -d '"' -f 4 | sed 's/^v//'
+  register: obsidian_version
+  changed_when: false
+  when:
+    - ansible_os_family == "Debian"
+    - not (obsidian_check.stat.exists | default(false))
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Install Obsidian from .deb (Debian/Ubuntu)
+  ansible.builtin.shell: |
+    cd /tmp
+    curl -Lo obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{ obsidian_version.stdout }}/obsidian_{{ obsidian_version.stdout }}_amd64.deb"
+    dpkg -i obsidian.deb || apt-get install -f -y
+    rm obsidian.deb
+  become: true
+  changed_when: true
+  when:
+    - ansible_os_family == "Debian"
+    - not (obsidian_check.stat.exists | default(false))
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Symlink obsidian-cli to /usr/local/bin (Debian/Ubuntu)
+  ansible.builtin.file:
+    src: /opt/Obsidian/obsidian-cli
+    dest: /usr/local/bin/obsidian-cli
+    state: link
+  become: true
+  when: ansible_os_family == "Debian" and not ansible_check_mode
+  tags: obsidian

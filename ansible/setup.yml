@@ -12,7 +12,7 @@
       ansible.builtin.include_tasks: tasks/packages.yml
       tags: packages
 
-    - name: Include user tool installs (Oh My Zsh, Claude CLI, uv)
+    - name: Include user tool installs (Oh My Zsh, Claude CLI, uv, Todoist CLI)
       ansible.builtin.include_tasks: tasks/user-tools.yml
       tags: user-tools
 
@@ -36,6 +36,10 @@
       ansible.builtin.include_tasks: tasks/git-hooks.yml
       tags: git-hooks
 
+    - name: Include Obsidian tasks
+      ansible.builtin.include_tasks: tasks/obsidian.yml
+      tags: obsidian
+
     - name: Include Tailscale tasks
       ansible.builtin.include_tasks: tasks/tailscale.yml
       tags: tailscale
@@ -52,12 +56,13 @@
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
           - "Packages installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'packages' in ansible_run_tags else 'Skipped' }}"
-          - "User tools installed (Oh My Zsh, Claude CLI, uv): {{ 'Yes' if ansible_run_tags == ['all'] or 'user-tools' in ansible_run_tags else 'Skipped' }}"
+          - "User tools installed (Oh My Zsh, Claude CLI, uv, Todoist CLI): {{ 'Yes' if ansible_run_tags == ['all'] or 'user-tools' in ansible_run_tags else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'claude' in ansible_run_tags else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'homedir' in ansible_run_tags else 'Skipped' }}"
           - "Vale configuration installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'vale' in ansible_run_tags else 'Skipped' }}"
           - "Git hooks installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'git-hooks' in ansible_run_tags else 'Skipped' }}"
+          - "Obsidian installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'obsidian' in ansible_run_tags else 'Skipped' }}"
           - "Tailscale installed/updated: {{ 'Yes' if ansible_run_tags == ['all'] or 'tailscale' in ansible_run_tags else 'Skipped' }}"
           - "mmegger user setup (Debian): {{ 'Yes' if 'mmegger' in ansible_run_tags else 'Skipped' }}"
           - ""

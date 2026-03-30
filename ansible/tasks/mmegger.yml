@@ -15,6 +15,13 @@
     target_home: /home/mmegger
   tags: mmegger
 
+- name: Include Obsidian tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: obsidian.yml
+    apply:
+      tags: mmegger
+  tags: mmegger
+
 - name: Include Tailscale tasks for mmegger
   ansible.builtin.include_tasks:
     file: tailscale.yml
