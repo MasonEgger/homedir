@@ -11,3 +11,4 @@ paths:
 3. **Absolute imports only** - never use relative imports.
 4. **Modern Python idioms** - use latest features appropriate for target version.
 5. **Empty `__init__.py`** - never add anything to `__init__.py`.
+6. **Descriptive variable names** - single-letter names (`i`, `j`, `k`, `m`, `x`, etc.) are NEVER allowed. Use names that convey meaning: `line_index`, `inner_index`, `label_match`.
