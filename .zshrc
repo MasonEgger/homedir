@@ -32,6 +32,7 @@ alias uuid="uuidgen | tr '[:upper:]' '[:lower:]' | lolcat"
 alias django="python manage.py"
 alias venv-on='source $(git rev-parse --show-toplevel)/.venv/bin/activate'
 alias cdr='cd $(git rev-parse --show-toplevel)'
+alias todo='command td'  # Todoist CLI (bypasses td=tmux detach alias)
 
 # Tmux session management
 alias byobu=tmux

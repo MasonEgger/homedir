@@ -1,6 +1,6 @@
 ---
-# ABOUTME: Per-user tool installs via curl scripts.
-# Installs Oh My Zsh, Claude Code CLI, and uv into the target user's home directory.
+# ABOUTME: Per-user tool installs via curl scripts and npm.
+# Installs Oh My Zsh, Claude Code CLI, uv, and Todoist CLI into the target user's home directory.
 
 # Oh My Zsh
 - name: Install Oh My Zsh (target user)
@@ -64,4 +64,26 @@
   ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
   changed_when: true
   when: target_user is not defined and not uv_check.stat.exists and not ansible_check_mode
+  tags: user-tools
+
+# Todoist CLI (official Doist npm package)
+- name: Check if Todoist CLI is installed
+  ansible.builtin.shell: command -v td
+  register: todoist_cli_check
+  changed_when: false
+  failed_when: false
+  tags: user-tools
+
+- name: Install Todoist CLI (target user)
+  ansible.builtin.shell: >-
+    su - {{ target_user }} -s /bin/bash -c 'npm install -g @doist/todoist-cli'
+  become: true
+  changed_when: true
+  when: target_user is defined and todoist_cli_check.rc != 0 and not ansible_check_mode
+  tags: user-tools
+
+- name: Install Todoist CLI (current user)
+  ansible.builtin.shell: npm install -g @doist/todoist-cli
+  changed_when: true
+  when: target_user is not defined and todoist_cli_check.rc != 0 and not ansible_check_mode
   tags: user-tools
