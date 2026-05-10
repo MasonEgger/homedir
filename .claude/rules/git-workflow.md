@@ -10,8 +10,8 @@
 
 Follow this exact sequence for every commit:
 
-1. Run `/session-summary` to update `.ai-sessions/` with the current session state.
-2. Run `/bpe:commit-msg` to generate the commit message in `commit-msg.md`.
+1. Run `/bpe:session-summary` to update `.ai-sessions/` with the current session state.
+2. Run `/bpe:commit-message` to generate the commit message in `commit-msg.md`.
 3. Stage files and commit with `git commit -S -F commit-msg.md`.
 4. Run `/init` to update the project CLAUDE.md with any structural changes.
 
