@@ -1,0 +1,12 @@
+[Unit]
+Description=Obsidian Sync (continuous, headless) for {{ obsidian_vault_name }}
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/ob-sync-{{ obsidian_vault_name | lower }}
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

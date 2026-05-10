@@ -1,0 +1,10 @@
+{
+  "vaults": {
+    "{{ (ansible_user_dir + '/' + obsidian_vault_name) | hash('md5') }}": {
+      "path": "{{ ansible_user_dir }}/{{ obsidian_vault_name }}",
+      "ts": 1746846000000,
+      "open": true
+    }
+  },
+  "cli": true
+}
