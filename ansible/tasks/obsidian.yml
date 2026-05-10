@@ -1,8 +1,11 @@
 ---
-# ABOUTME: Obsidian installation tasks for macOS and Linux.
-# Installs the Obsidian desktop app and symlinks obsidian-cli to PATH.
+# ABOUTME: Obsidian install for macOS (desktop app via Homebrew) and Ubuntu (headless server).
+# Linux uses official AppImage + Electron --ozone-platform=headless, no Xvfb. Adds nvm/Node/obsidian-headless for Sync.
 
-# macOS - install via Homebrew cask
+# =============================================================================
+# macOS — desktop app via Homebrew cask
+# =============================================================================
+
 - name: Install Obsidian via Homebrew cask (macOS)
   community.general.homebrew_cask:
     name: obsidian
@@ -18,45 +21,335 @@
   when: ansible_os_family == "Darwin" and not ansible_check_mode
   tags: obsidian
 
-# Linux (Debian/Ubuntu) - install from GitHub releases .deb
-- name: Check if Obsidian is installed (Debian/Ubuntu)
-  ansible.builtin.stat:
-    path: /opt/Obsidian/obsidian-cli
-  register: obsidian_check
+# =============================================================================
+# Ubuntu/Debian — headless setup (AppImage + Electron headless ozone platform)
+#
+# Set `obsidian_vault_name` (e.g. -e obsidian_vault_name=Arcadia) to also wire up
+# the obsidian.json vault entry and the ob-sync.service. The interactive
+# `ob login` and `ob sync-setup` steps still need to be run manually after this.
+# =============================================================================
+
+# --- 1. System dependency for AppImage runtime ---
+- name: Install libfuse2t64 (Ubuntu/Debian — AppImage runtime dep)
+  ansible.builtin.apt:
+    name: libfuse2t64
+    state: present
+    update_cache: true
+  become: true
   when: ansible_os_family == "Debian"
   tags: obsidian
 
-- name: Get latest Obsidian version from GitHub (Debian/Ubuntu)
-  ansible.builtin.shell: >-
-    curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest
-    | grep '"tag_name"' | cut -d '"' -f 4 | sed 's/^v//'
-  register: obsidian_version
-  changed_when: false
+# --- 2. Per-user dirs ---
+- name: Create per-user Obsidian dirs (Ubuntu/Debian)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ansible_user_dir }}/.local/share/Obsidian"
+    - "{{ ansible_user_dir }}/.local/bin"
+    - "{{ ansible_user_dir }}/.config/systemd/user"
+    - "{{ ansible_user_dir }}/.config/obsidian"
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+# --- 3. Resolve latest Obsidian version ---
+- name: Get latest Obsidian release info from GitHub (Ubuntu/Debian)
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest
+    return_content: true
+  register: obsidian_release
   when:
     - ansible_os_family == "Debian"
-    - not (obsidian_check.stat.exists | default(false))
     - not ansible_check_mode
   tags: obsidian
 
-- name: Install Obsidian from .deb (Debian/Ubuntu)
+- name: Set Obsidian version fact
+  ansible.builtin.set_fact:
+    obsidian_version: "{{ obsidian_release.json.tag_name | regex_replace('^v', '') }}"
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_release.json is defined
+  tags: obsidian
+
+# --- 4. Download AppImage ---
+- name: Download Obsidian AppImage (Ubuntu/Debian)
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/obsidianmd/obsidian-releases/releases/download/v{{ obsidian_version
+      }}/Obsidian-{{ obsidian_version }}{{ '-arm64' if ansible_architecture == 'aarch64' else '' }}.AppImage
+    dest: "{{ ansible_user_dir }}/.local/share/Obsidian/Obsidian.AppImage"
+    mode: "0755"
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_version is defined
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 5. Extract obsidian-cli binary from AppImage to ~/.local/bin/obsidian ---
+- name: Check if obsidian CLI binary is already in place
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/.local/bin/obsidian"
+  register: obsidian_cli_check
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Extract obsidian-cli from AppImage (Ubuntu/Debian)
   ansible.builtin.shell: |
-    cd /tmp
-    curl -Lo obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{ obsidian_version.stdout }}/obsidian_{{ obsidian_version.stdout }}_amd64.deb"
-    dpkg -i obsidian.deb || apt-get install -f -y
-    rm obsidian.deb
+    set -e
+    workdir=$(mktemp -d)
+    cd "$workdir"
+    "{{ ansible_user_dir }}/.local/share/Obsidian/Obsidian.AppImage" --appimage-extract obsidian-cli
+    install -m 755 squashfs-root/obsidian-cli "{{ ansible_user_dir }}/.local/bin/obsidian"
+    rm -rf "$workdir"
+  changed_when: true
+  when:
+    - ansible_os_family == "Debian"
+    - not (obsidian_cli_check.stat.exists | default(false))
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 6. nvm + Node LTS (needed for `ob` / obsidian-headless) ---
+- name: Check if nvm is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/.nvm/nvm.sh"
+  register: nvm_check
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Clone nvm into ~/.nvm (Ubuntu/Debian)
+  ansible.builtin.git:
+    repo: https://github.com/nvm-sh/nvm.git
+    dest: "{{ ansible_user_dir }}/.nvm"
+    version: v0.40.1
+    depth: 1
+  when:
+    - ansible_os_family == "Debian"
+    - not (nvm_check.stat.exists | default(false))
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Add nvm sourcing to .zshrc (idempotent block)
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_user_dir }}/.zshrc"
+    marker: "# {mark} ANSIBLE MANAGED nvm"
+    create: true
+    mode: "0644"
+    block: |
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Check if Node LTS is installed via nvm
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm which --lts >/dev/null 2>&1 && echo present || echo missing
+  args:
+    executable: /bin/bash
+  register: node_lts_check
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Install Node LTS via nvm (Ubuntu/Debian)
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm install --lts
+    nvm alias default 'lts/*'
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when:
+    - ansible_os_family == "Debian"
+    - node_lts_check.stdout is defined and 'missing' in node_lts_check.stdout
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 7. obsidian-headless (`ob` command) ---
+- name: Check if obsidian-headless (ob) is installed
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm use --lts >/dev/null
+    command -v ob
+  args:
+    executable: /bin/bash
+  register: ob_check
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Install obsidian-headless globally via npm (Ubuntu/Debian)
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm use --lts >/dev/null
+    npm install -g obsidian-headless
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when:
+    - ansible_os_family == "Debian"
+    - ob_check.rc != 0
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 8. Pre-create obsidian.json with cli:true (vault entry only if vault name provided) ---
+- name: Write obsidian.json (cli enabled + vault registration)
+  ansible.builtin.template:
+    src: obsidian.json.j2
+    dest: "{{ ansible_user_dir }}/.config/obsidian/obsidian.json"
+    mode: "0644"
+    force: false  # don't clobber if user/Obsidian has modified it
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+  tags: obsidian
+
+# --- 9. systemd user units ---
+- name: Install obsidian.service systemd user unit
+  ansible.builtin.template:
+    src: obsidian-headless.service.j2
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/obsidian.service"
+    mode: "0644"
+  when: ansible_os_family == "Debian"
+  tags: obsidian
+
+- name: Install ob-sync wrapper script (only if vault configured)
+  ansible.builtin.template:
+    src: ob-sync-wrapper.sh.j2
+    dest: "{{ ansible_user_dir }}/.local/bin/ob-sync-{{ obsidian_vault_name | lower }}"
+    mode: "0755"
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+  tags: obsidian
+
+- name: Install ob-sync.service systemd user unit (only if vault configured)
+  ansible.builtin.template:
+    src: ob-sync.service.j2
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/ob-sync.service"
+    mode: "0644"
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+  tags: obsidian
+
+# --- 10. Reload + enable + start services ---
+- name: Reload user systemd daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    scope: user
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Enable and start obsidian.service (headless app)
+  ansible.builtin.systemd_service:
+    name: obsidian.service
+    enabled: true
+    state: started
+    scope: user
+  when:
+    - ansible_os_family == "Debian"
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 11. enable-linger so services persist across logout/reboot ---
+- name: Enable user lingering (services run across reboots)
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ ansible_user_id }}"
   become: true
   changed_when: true
   when:
     - ansible_os_family == "Debian"
-    - not (obsidian_check.stat.exists | default(false))
     - not ansible_check_mode
   tags: obsidian
 
-- name: Symlink obsidian-cli to /usr/local/bin (Debian/Ubuntu)
-  ansible.builtin.file:
-    src: /opt/Obsidian/obsidian-cli
-    dest: /usr/local/bin/obsidian-cli
-    state: link
-  become: true
-  when: ansible_os_family == "Debian" and not ansible_check_mode
+# --- 12. Post-vault-setup steps (only if vault is already synced) ---
+# After the user runs `ob login` + `ob sync-setup` and the vault dir is populated,
+# re-run this playbook to enable continuous sync and load community plugins.
+
+- name: Check if vault has been synced (.obsidian dir present)
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/{{ obsidian_vault_name }}/.obsidian"
+  register: vault_synced_check
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+  tags: obsidian
+
+- name: Restart obsidian.service so it picks up the synced vault
+  ansible.builtin.systemd_service:
+    name: obsidian.service
+    state: restarted
+    scope: user
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+    - vault_synced_check.stat.exists | default(false)
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Wait briefly for Obsidian to come up
+  ansible.builtin.pause:
+    seconds: 6
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+    - vault_synced_check.stat.exists | default(false)
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Enable community plugins via setEnable (headless mode skips the trust prompt)
+  ansible.builtin.command:
+    cmd: "{{ ansible_user_dir }}/.local/bin/obsidian eval code=app.plugins.setEnable(true)"
+  changed_when: false
+  failed_when: false
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+    - vault_synced_check.stat.exists | default(false)
+    - not ansible_check_mode
+  tags: obsidian
+
+- name: Enable and start ob-sync.service (continuous sync)
+  ansible.builtin.systemd_service:
+    name: ob-sync.service
+    enabled: true
+    state: started
+    scope: user
+  when:
+    - ansible_os_family == "Debian"
+    - obsidian_vault_name | default('') | length > 0
+    - vault_synced_check.stat.exists | default(false)
+    - not ansible_check_mode
+  tags: obsidian
+
+# --- 13. Next-steps message ---
+- name: Print Obsidian setup next-steps (Ubuntu/Debian)
+  ansible.builtin.debug:
+    msg: >-
+      {% if obsidian_vault_name | default('') | length == 0 -%}
+      Obsidian headless installed. obsidian.service is running with cli disabled (no vault yet).
+      To finish: re-run with -e obsidian_vault_name=YOURVAULT, then run interactively:
+      `ob login`, `ob sync-list-remote`, `ob sync-setup --vault NAME --path ~/NAME --device-name {{ ansible_hostname }}`,
+      `ob sync-config --path ~/NAME --mode pull-only --configs community-plugin,community-plugin-data,core-plugin,core-plugin-data,app,hotkey,appearance`,
+      then re-run this playbook (--tags obsidian) to enable continuous sync.
+      {%- elif vault_synced_check.stat.exists | default(false) -%}
+      Obsidian headless setup complete. Vault {{ obsidian_vault_name }} is synced. obsidian.service + ob-sync.service running. Test: `obsidian help`.
+      {%- else -%}
+      Obsidian installed for vault {{ obsidian_vault_name }} but vault is not synced yet. Run interactively:
+      `ob login`, `ob sync-setup --vault {{ obsidian_vault_name }} --path ~/{{ obsidian_vault_name }} --device-name {{ ansible_hostname }}`,
+      `ob sync-config --path ~/{{ obsidian_vault_name }} --mode pull-only --configs community-plugin,community-plugin-data,core-plugin,core-plugin-data,app,hotkey,appearance`,
+      then re-run this playbook to finish.
+      {%- endif %}
+  when: ansible_os_family == "Debian"
   tags: obsidian

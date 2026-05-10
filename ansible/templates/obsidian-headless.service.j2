@@ -1,0 +1,13 @@
+[Unit]
+Description=Obsidian (headless via Electron --ozone-platform=headless)
+After=default.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'rm -f %h/.config/obsidian/SingletonLock %h/.config/obsidian/SingletonSocket %h/.config/obsidian/SingletonCookie'
+ExecStart=%h/.local/share/Obsidian/Obsidian.AppImage --ozone-platform=headless --disable-gpu --disable-software-rasterizer --no-sandbox
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -35,6 +35,7 @@ ansible-playbook ansible/setup.yml --tags homedir       # .homedir scripts
 ansible-playbook ansible/setup.yml --tags vale          # Vale prose linter
 ansible-playbook ansible/setup.yml --tags git-hooks     # Global git hooks
 ansible-playbook ansible/setup.yml --tags tailscale     # Tailscale VPN
+ansible-playbook ansible/setup.yml --tags obsidian      # Obsidian (cask on macOS, headless AppImage on Ubuntu)
 
 # Combine tags
 ansible-playbook ansible/setup.yml --tags packages,dotfiles
@@ -60,6 +61,7 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `vale` | `vale.yml` | Mixed | Vale binary (system) + .vale.ini config (per-user) |
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
 | `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
+| `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services |
 | `mmegger` | `mmegger.yml` | Both | Full user provisioning — hidden tag (`[never, mmegger]`) |
 
 ### Target User Pattern
@@ -80,6 +82,18 @@ The ordering in `mmegger.yml` matters:
 4. **Per-user configs** (user-tools, dotfiles, claude, homedir, git-hooks)
 
 Variables in `ansible/group_vars/all.yml` define package lists and defaults.
+
+### Obsidian Task — Two-Pass Flow
+
+Unlike other tasks, `obsidian.yml` on Ubuntu has interactive sub-steps (Obsidian Sync login + e2e password) that can't be automated. The task is designed to be run twice:
+
+1. **Pass 1** (`--tags obsidian`): installs AppImage, extracts `obsidian-cli` to `~/.local/bin/obsidian`, installs nvm + Node LTS + `obsidian-headless`, writes systemd `--user` units, starts `obsidian.service`, runs `loginctl enable-linger`. No vault yet.
+2. **User runs interactively**: `ob login`, `ob sync-setup --vault NAME --path ~/NAME`, then `ob sync-config --path ~/NAME --mode pull-only --configs ...` (pull-only is mandatory — bidirectional with empty defaults will overwrite cloud configs).
+3. **Pass 2** (`--tags obsidian -e obsidian_vault_name=NAME`): registers the vault in `obsidian.json`, restarts Obsidian, runs `app.plugins.setEnable(true)` (loads community plugins — headless mode skips the trust prompt that would normally do this), enables `ob-sync.service`.
+
+The systemd units run with Electron's built-in `--ozone-platform=headless` flag — no Xvfb needed. Templates live in `ansible/templates/obsidian-headless.service.j2`, `ob-sync.service.j2`, `ob-sync-wrapper.sh.j2`, `obsidian.json.j2`.
+
+**Linux task assumes target user.** `obsidian.yml` uses `ansible_user_dir` and `systemctl --user`, so it runs only as the target user. The `mmegger` flow can include it but doesn't currently pass `target_home` — if you ever need root-bootstrapped headless Obsidian, both `mmegger.yml`'s include and `obsidian.yml`'s path references need adjusting.
 
 ## Key Commands and Aliases
 
