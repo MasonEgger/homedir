@@ -19,6 +19,7 @@ MARKETPLACES: list[tuple[str, str]] = [
     ("mmegger-plugins", "MasonEgger/claude-code-plugin"),
     ("mmegger-private-plugins", "MasonEgger/claude-code-plugin-private"),
     ("obsidian-skills", "kepano/obsidian-skills"),
+    ("slidev-plugins", "slidevjs/slidev"),
     ("temporal-marketplace", "temporalio/claude-temporal-plugin"),
 ]
 
@@ -39,6 +40,7 @@ PLUGINS: list[tuple[str, str]] = [
     ("productivity", "mmegger-private-plugins"),
     ("example-skills", "anthropic-agent-skills"),
     ("obsidian", "obsidian-skills"),
+    ("slidev", "slidev-plugins"),
     ("temporal", "temporal-marketplace"),
 ]
 

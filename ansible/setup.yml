@@ -56,7 +56,7 @@
           - "=== Installation Summary ==="
           - "OS: {{ ansible_os_family }}"
           - "Packages installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'packages' in ansible_run_tags else 'Skipped' }}"
-          - "User tools installed (Oh My Zsh, Claude CLI, uv, Todoist CLI): {{ 'Yes' if ansible_run_tags == ['all'] or 'user-tools' in ansible_run_tags else 'Skipped' }}"
+          - "User tools installed (Oh My Zsh, Claude CLI, uv, Todoist CLI, pnpm): {{ 'Yes' if ansible_run_tags == ['all'] or 'user-tools' in ansible_run_tags else 'Skipped' }}"
           - "Core dotfiles installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'dotfiles' in ansible_run_tags else 'Skipped' }}"
           - "Claude directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'claude' in ansible_run_tags else 'Skipped' }}"
           - "Homedir directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'homedir' in ansible_run_tags else 'Skipped' }}"
