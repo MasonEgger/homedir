@@ -4,7 +4,8 @@
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-export PATH=$HOME/.local/bin:$HOME/.homedir:$PATH
+export PNPM_HOME="$HOME/Library/pnpm"
+export PATH=$HOME/.local/bin:$HOME/.homedir:$PNPM_HOME:$PATH
 # Set JAVA_HOME: Homebrew openjdk on macOS, default-jdk on Linux
 if [[ -d "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home" ]]; then
   export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"

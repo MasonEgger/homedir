@@ -17,8 +17,9 @@ MARKETPLACES: list[tuple[str, str]] = [
     ("anthropic-agent-skills", "anthropics/skills"),
     ("claude-plugins-official", "anthropics/claude-plugins-official"),
     ("mmegger-plugins", "MasonEgger/claude-code-plugin"),
+    ("mmegger-private-plugins", "MasonEgger/claude-code-plugin-private"),
     ("obsidian-skills", "kepano/obsidian-skills"),
-    ("temporal-marketplace", "temporalio/agent-skills"),
+    ("temporal-marketplace", "temporalio/claude-temporal-plugin"),
 ]
 
 PLUGINS: list[tuple[str, str]] = [
@@ -33,12 +34,12 @@ PLUGINS: list[tuple[str, str]] = [
     ("slack", "claude-plugins-official"),
     ("telegram", "claude-plugins-official"),
     ("bpe", "mmegger-plugins"),
-    ("productivity", "mmegger-plugins"),
-    ("writing", "mmegger-plugins"),
     ("python", "mmegger-plugins"),
+    ("content-design", "mmegger-private-plugins"),
+    ("productivity", "mmegger-private-plugins"),
     ("example-skills", "anthropic-agent-skills"),
     ("obsidian", "obsidian-skills"),
-    ("temporal-developer", "temporal-marketplace"),
+    ("temporal", "temporal-marketplace"),
 ]
 
 
