@@ -37,6 +37,7 @@ PLUGINS: list[tuple[str, str]] = [
     ("bpe", "mmegger-plugins"),
     ("python", "mmegger-plugins"),
     ("content-design", "mmegger-private-plugins"),
+    ("indie", "mmegger-private-plugins"),
     ("productivity", "mmegger-private-plugins"),
     ("example-skills", "anthropic-agent-skills"),
     ("obsidian", "obsidian-skills"),
