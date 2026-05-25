@@ -3,6 +3,9 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
+- To list plugins exposed by a Claude Code marketplace repo: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative — directory listings can mislead when README/LICENSE are mixed with plugin dirs (2026-05-24)
+- For dotfiles in this repo: edit sources at `~/Code/MasonEgger/homedir/.claude/` and `~/Code/MasonEgger/homedir/.homedir/`, not the synced live copies at `~/.claude/`/`~/.homedir/`. `ansible-playbook ansible/setup.yml --tags claude,homedir` propagates (2026-05-24)
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb — it's a built-in Chromium platform that draws to memory, no X server needed (2026-05-10)
 - When initializing sync between an authoritative source and a fresh/empty target, **always start in `pull-only` mode**. Bidirectional + merge can wipe data when the empty side "looks newer" via local timestamps (2026-05-10)
 - Obsidian's "enable Command line interface" toggle is just `"cli": true` at the top of `~/.config/obsidian/obsidian.json`. Reverse-engineered by `strings AppImage/resources/obsidian.asar | grep -aoE '"cli"[^"]{0,80}'`. Pattern works for any Electron app with GUI-only settings (2026-05-10)
@@ -10,9 +13,6 @@
 - Obsidian's `obsidian create … template=…` CLI command targets the **core Templates plugin only**. If user uses Templater (community), it errors with "Templates plugin is not enabled." Workaround: invoke `templater.create_new_note_from_template(tplFile, folderTFolder, filename, false)` via `obsidian eval` (2026-05-10)
 - Verify server timezone (`date`, `timedatectl`) at the start of any time-sensitive setup before generating datestamped output. UTC server vs CDT user produced a wrong-day daily note before catch (2026-05-10)
 - For interactive sub-steps (login flows, password prompts, MFA), hand control to the user with `! <command>` syntax via the prompt rather than trying to automate around them. The Bash harness can't supply interactive input (2026-05-10)
-- Auto-mode classifier blocks `curl … | bash` for installer scripts. Use `git clone` from the upstream repo instead — same result, no piped script execution (2026-05-10)
-- systemd `--user` services stop when the last login session ends. Run `sudo loginctl enable-linger <user>` for true 24/7 persistence across reboots without an open SSH session (2026-05-10)
-- For Ansible playbooks that wrap interactive tooling, design as a two-pass flow: pass 1 installs everything and starts services, user runs interactive setup commands, pass 2 (with vault/account variables provided via `-e`) finishes the wiring (2026-05-10)
 
 ## Categories
 
@@ -20,11 +20,19 @@
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb (2026-05-10)
 - Reading asar/binary strings (`strings file | grep`) is a useful pattern for reverse-engineering JSON config keys in Electron apps (2026-05-10)
 - nvm install: prefer `git clone https://github.com/nvm-sh/nvm.git ~/.nvm` over `curl … | bash` — the classifier blocks the latter (2026-05-10)
+- Auto-mode classifier blocks `curl … | bash` for installer scripts. Use `git clone` from the upstream repo instead — same result, no piped script execution (2026-05-10)
 
 ### Workflow / Sync
 - When initializing sync between an authoritative source and a fresh/empty target, always start in `pull-only` mode to prevent the empty side from overwriting the source (2026-05-10)
 - For interactive sub-steps in setup flows, use `! <command>` to hand control to the user instead of trying to automate around them (2026-05-10)
 - Two-pass Ansible flow for interactive tools: pass 1 = install + services, user does interactive setup, pass 2 = finish wiring with `-e` vars (2026-05-10)
+- For dotfiles in `~/Code/MasonEgger/homedir/`: edit `.claude/` and `.homedir/` sources, not the synced live copies at `~/.claude/`/`~/.homedir/`. Let `ansible --tags claude,homedir` propagate (2026-05-24)
+
+### Claude Code Behavior
+- Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
+
+### Plugin Development
+- To list plugins a Claude Code marketplace repo exposes: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative source — directory listings can mislead (2026-05-24)
 
 ### Obsidian
 - The CLI toggle in Settings → General is just `"cli": true` at the top of `~/.config/obsidian/obsidian.json` (2026-05-10)
