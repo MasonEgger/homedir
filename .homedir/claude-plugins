@@ -9,8 +9,13 @@
 
 """Install or update Claude Code plugins from multiple marketplaces."""
 
+import re
 import subprocess
 import sys
+
+VERSION_RE = re.compile(r"\(([^()]*\d[^()]*)\)")
+ALREADY_LATEST_RE = re.compile(r"already at the latest version", re.IGNORECASE)
+FRESH_INSTALL_RE = re.compile(r"already installed", re.IGNORECASE)
 
 MARKETPLACES: list[tuple[str, str]] = [
     # (name, github_repo)
@@ -70,22 +75,41 @@ def ensure_marketplaces() -> bool:
     return ok
 
 
+def extract_version(text: str) -> str | None:
+    """Pull a version-like token out of CLI output, if present."""
+    match = VERSION_RE.search(text)
+    return match.group(1) if match else None
+
+
 def sync_plugins() -> None:
     """Install or update each plugin."""
     for plugin, marketplace in PLUGINS:
         qualified = f"{plugin}@{marketplace}"
         print(f"Syncing {plugin} ({marketplace})...", end=" ", flush=True)
         # install is idempotent — succeeds even if already installed
-        result = run_claude(["plugin", "install", qualified])
-        if result.returncode != 0:
-            print(f"FAILED: {result.stderr.strip() or result.stdout.strip()}")
+        install_result = run_claude(["plugin", "install", qualified])
+        if install_result.returncode != 0:
+            print(f"FAILED: {install_result.stderr.strip() or install_result.stdout.strip()}")
             continue
+        install_output = f"{install_result.stdout}\n{install_result.stderr}"
+        freshly_installed = not FRESH_INSTALL_RE.search(install_output)
         # update to latest version
-        result = run_claude(["plugin", "update", qualified])
-        if result.returncode != 0:
-            print(f"installed, but update FAILED: {result.stderr.strip() or result.stdout.strip()}")
+        update_result = run_claude(["plugin", "update", qualified])
+        if update_result.returncode != 0:
+            print(
+                f"installed, but update FAILED: "
+                f"{update_result.stderr.strip() or update_result.stdout.strip()}"
+            )
+            continue
+        update_output = f"{update_result.stdout}\n{update_result.stderr}"
+        version = extract_version(update_output) or extract_version(install_output)
+        version_suffix = f" {version}" if version else ""
+        if freshly_installed:
+            print(f"🆕 installed{version_suffix}")
+        elif ALREADY_LATEST_RE.search(update_output):
+            print(f"✓ up to date{version_suffix}")
         else:
-            print("done")
+            print(f"🚧 updated{version_suffix}")
 
 
 def main() -> None:
