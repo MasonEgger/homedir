@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) belong in `.zshrc` next to each other, and get documented in the README "Shell Configuration (`.zshrc`)" alias table — **not** the "Terminal Multiplexer Configuration (`.tmux.conf`)" section, which is only for in-session keybindings (2026-06-11)
 - This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook complains — and never reach for `--no-verify` to bypass it (2026-05-31)
 - `claude plugin update <name>@<marketplace>` emits `✔ <name> is already at the latest version (X.Y.Z).` on no-op. Parse with `re.compile(r"\(([^()]*\d[^()]*)\)")` to grab the version; tolerates semver and short commit SHAs alike. Several official plugins omit the version entirely — handle the empty case (2026-05-31)
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
@@ -12,8 +13,6 @@
 - When initializing sync between an authoritative source and a fresh/empty target, **always start in `pull-only` mode**. Bidirectional + merge can wipe data when the empty side "looks newer" via local timestamps (2026-05-10)
 - Obsidian's "enable Command line interface" toggle is just `"cli": true` at the top of `~/.config/obsidian/obsidian.json`. Reverse-engineered by `strings AppImage/resources/obsidian.asar | grep -aoE '"cli"[^"]{0,80}'`. Pattern works for any Electron app with GUI-only settings (2026-05-10)
 - Headless Obsidian skips the "Trust author and enable community plugins" prompt, so plugins are listed in `enabledPlugins` but `app.plugins.plugins` stays empty. Fix: `obsidian eval code="app.plugins.setEnable(true)"`. Persists across service restarts via `~/.config/obsidian/Local Storage/leveldb/` (2026-05-10)
-- Obsidian's `obsidian create … template=…` CLI command targets the **core Templates plugin only**. If user uses Templater (community), it errors with "Templates plugin is not enabled." Workaround: invoke `templater.create_new_note_from_template(tplFile, folderTFolder, filename, false)` via `obsidian eval` (2026-05-10)
-
 ## Categories
 
 ### Tooling
@@ -27,6 +26,9 @@
 - For interactive sub-steps in setup flows, use `! <command>` to hand control to the user instead of trying to automate around them (2026-05-10)
 - Two-pass Ansible flow for interactive tools: pass 1 = install + services, user does interactive setup, pass 2 = finish wiring with `-e` vars (2026-05-10)
 - For dotfiles in `~/Code/MasonEgger/homedir/`: edit `.claude/` and `.homedir/` sources, not the synced live copies at `~/.claude/`/`~/.homedir/`. Let `ansible --tags claude,homedir` propagate (2026-05-24)
+
+### Documentation
+- tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) live in `.zshrc` and are documented in the README "Shell Configuration (`.zshrc`)" alias table, not the "Terminal Multiplexer Configuration (`.tmux.conf`)" section (in-session keybindings only) (2026-06-11)
 
 ### Git
 - This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook errors — never reach for `--no-verify` (2026-05-31)

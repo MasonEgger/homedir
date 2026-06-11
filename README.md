@@ -75,6 +75,11 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 | `python` | Alias for python3 | `python <script.py>` |
 | `django` | Shortcut for python manage.py | `django <command>` |
 | `uuid` | Generate lowercase UUID with colorful output (using lolcat) | `uuid` |
+| `tl` | List active tmux sessions | `tl` |
+| `ta` | Attach to a tmux session (last/default if no name) | `ta [session]` |
+| `tn` | Create a new tmux session (unnamed if no name) | `tn [session]` |
+| `ts` | Switch to another tmux session from inside tmux (last session if no name) | `ts [session]` |
+| `td` | Detach from the current tmux session | `td` |
 
 **Additional Configuration:**
 - **Shell**: Zsh with Oh My Zsh (geoffgarside theme)
