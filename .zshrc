@@ -59,6 +59,15 @@ tn() {
     fi
 }
 
+# Tmux switch function - switch to another session from inside tmux
+ts() {
+    if [ -z "$1" ]; then
+        tmux switch-client -l
+    else
+        tmux switch -t "$1"
+    fi
+}
+
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
