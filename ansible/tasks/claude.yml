@@ -1,23 +1,111 @@
 ---
-# .claude Directory Installation Tasks
-- name: Check if .claude directory exists
+# .claude Directory Installation — COPY strategy with stale-file cleanup.
+#
+# The repo is the source of truth. Every deploy:
+#   1. Replaces ~/.claude/CLAUDE.md with the repo copy.
+#   2. WIPES ~/.claude/rules/ and re-copies it from the repo, so any file
+#      that no longer exists in the repo (e.g. error-handling.md after the
+#      consolidation refactor) is removed from live.
+#   3. Replaces ~/.claude/settings.json with the repo copy.
+#
+# Ad-hoc edits to those three tracked entries between deploys are lost on
+# the next run — that is the design. If you want a change to persist, make
+# it in the repo and commit.
+#
+# Per-machine runtime files (history.jsonl, backups/, cache/, file-history/,
+# .credentials.json, .last-update-result.json, settings.local.json) are NOT
+# touched. Only the three tracked entries above.
+#
+# Migration: if a prior deploy created symlinks at the tracked-entry paths
+# (e.g. the brief 0.x experiment with `state: link`), the first task below
+# removes them so the subsequent copy tasks do not follow the symlink and
+# write back into the repo.
+- name: Check if .claude directory exists in dotfiles
   ansible.builtin.stat:
     path: "{{ dotfiles_dir }}/.claude"
   register: claude_dir
   tags: claude
 
-- name: Install .claude directory
-  ansible.builtin.copy:
-    src: "{{ dotfiles_dir }}/.claude"
-    dest: "{{ target_home }}/"
-    backup: false
-    mode: preserve
-    directory_mode: '0755'
+- name: Ensure live ~/.claude/ exists
+  ansible.builtin.file:
+    path: "{{ target_home }}/.claude"
+    state: directory
+    mode: '0755'
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   when: claude_dir.stat.exists
   become: "{{ target_user is defined }}"
-  register: claude_files_installed
+  tags: claude
+
+- name: Inspect tracked entries (detect leftover symlinks)
+  ansible.builtin.stat:
+    path: "{{ target_home }}/.claude/{{ item }}"
+    follow: false
+  register: claude_entry_stats
+  loop:
+    - CLAUDE.md
+    - rules
+    - settings.json
+  when: claude_dir.stat.exists
+  tags: claude
+
+- name: Remove any symlinked tracked entries (so copy does not follow them)
+  ansible.builtin.file:
+    path: "{{ item.stat.path }}"
+    state: absent
+  loop: "{{ claude_entry_stats.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when:
+    - claude_dir.stat.exists
+    - item.stat.exists | default(false)
+    - item.stat.islnk | default(false)
+  become: "{{ target_user is defined }}"
+  tags: claude
+
+- name: Wipe live ~/.claude/rules/ (will be re-copied from repo below)
+  ansible.builtin.file:
+    path: "{{ target_home }}/.claude/rules"
+    state: absent
+  when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  tags: claude
+
+- name: Install ~/.claude/CLAUDE.md from repo
+  ansible.builtin.copy:
+    src: "{{ dotfiles_dir }}/.claude/CLAUDE.md"
+    dest: "{{ target_home }}/.claude/CLAUDE.md"
+    mode: '0644'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
+    backup: false
+  when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  tags: claude
+
+- name: Install ~/.claude/rules/ from repo
+  ansible.builtin.copy:
+    src: "{{ dotfiles_dir }}/.claude/rules/"
+    dest: "{{ target_home }}/.claude/rules/"
+    mode: '0644'
+    directory_mode: '0755'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
+    backup: false
+  when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  tags: claude
+
+- name: Install ~/.claude/settings.json from repo
+  ansible.builtin.copy:
+    src: "{{ dotfiles_dir }}/.claude/settings.json"
+    dest: "{{ target_home }}/.claude/settings.json"
+    mode: '0644'
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
+    backup: false
+  when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
   tags: claude
 
 - name: Install Claude Code plugins (target user)
