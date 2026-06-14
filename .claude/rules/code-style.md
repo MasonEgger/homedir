@@ -1,3 +1,30 @@
+---
+paths:
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.go"
+  - "**/*.rs"
+  - "**/*.rb"
+  - "**/*.java"
+  - "**/*.c"
+  - "**/*.cc"
+  - "**/*.cpp"
+  - "**/*.h"
+  - "**/*.hpp"
+  - "**/*.sh"
+  - "**/*.zsh"
+  - "**/*.bash"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/*test*"
+  - "**/test*/**"
+  - "**/tests/**"
+  - "**/conftest.py"
+---
+
 ## Writing Code
 
 - Always follow a Test Driven Development Mindset
@@ -19,3 +46,21 @@
 - Naming: Use descriptive names. Avoid generic names like `tmp`, `data`, `handleStuff`. For example, prefer `calculateInvoiceTotal` over `doCalc`.
 - DRY Principle: Do not duplicate code. If similar logic exists in two places, refactor into a shared function (or clarify why both need their own implementation).
 - Comments: Explain non-obvious logic, but don't over-comment self-explanatory code. Remove any leftover debug or commented-out code.
+
+## Error Handling
+
+- Trust internal code. Don't wrap everything in try/catch "just in case."
+- Validate at system boundaries: user input, external APIs, file I/O, network calls.
+- Fail fast and loud. Let errors propagate rather than silently swallowing them.
+- Use specific exception types, not generic catches. Handle what you can recover from, let the rest bubble up.
+- Don't add fallbacks or defaults for scenarios that shouldn't happen - if it happens, we want to know.
+
+## Testing
+
+- Tests MUST cover the functionality being implemented.
+- NEVER ignore test output - logs often contain CRITICAL information.
+- Test YOUR application logic, not frameworks/libraries.
+- DO NOT test trivial code (getters, setters, simple assignments).
+- Test behavior and outcomes, not implementation details.
+- When uncertain: "Am I testing MY code's logic, or verifying that a library works?"
+- Module-level mutable state (dicts, lists, caches) needs an `autouse` fixture that clears it between tests. Write the fixture during RED, not as a REFACTOR afterthought.

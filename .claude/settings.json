@@ -1,6 +1,75 @@
 {
-    "includeCoAuthoredBy": false,
-    "env": {
-      "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
+  "env": {
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "enabledPlugins": {
+    "asana@claude-plugins-official": true,
+    "discord@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "telegram@claude-plugins-official": true,
+    "bpe@mmegger-plugins": true,
+    "python@mmegger-plugins": true,
+    "content-design@mmegger-private-plugins": true,
+    "health@mmegger-private-plugins": true,
+    "indie@mmegger-private-plugins": true,
+    "productivity@mmegger-private-plugins": true,
+    "example-skills@anthropic-agent-skills": true,
+    "obsidian@obsidian-skills": true,
+    "slidev@slidev-plugins": true,
+    "temporal@temporal-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "mmegger-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "MasonEgger/claude-code-plugin"
+      }
+    },
+    "mmegger-private-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "MasonEgger/claude-code-plugin-private"
+      }
+    },
+    "obsidian-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kepano/obsidian-skills"
+      }
+    },
+    "slidev-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "slidevjs/slidev"
+      }
+    },
+    "temporal-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "temporalio/claude-temporal-plugin"
+      }
     }
+  },
+  "skipAutoPermissionPrompt": true
 }
