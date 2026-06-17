@@ -9,11 +9,13 @@
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
 - To list plugins exposed by a Claude Code marketplace repo: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative — directory listings can mislead when README/LICENSE are mixed with plugin dirs (2026-05-24)
 - For dotfiles in this repo: edit sources at `~/Code/MasonEgger/homedir/.claude/` and `~/Code/MasonEgger/homedir/.homedir/`, not the synced live copies at `~/.claude/`/`~/.homedir/`. `ansible-playbook ansible/setup.yml --tags claude,homedir` propagates (2026-05-24)
-- For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb — it's a built-in Chromium platform that draws to memory, no X server needed (2026-05-10)
-- When initializing sync between an authoritative source and a fresh/empty target, **always start in `pull-only` mode**. Bidirectional + merge can wipe data when the empty side "looks newer" via local timestamps (2026-05-10)
-- Obsidian's "enable Command line interface" toggle is just `"cli": true` at the top of `~/.config/obsidian/obsidian.json`. Reverse-engineered by `strings AppImage/resources/obsidian.asar | grep -aoE '"cli"[^"]{0,80}'`. Pattern works for any Electron app with GUI-only settings (2026-05-10)
-- Headless Obsidian skips the "Trust author and enable community plugins" prompt, so plugins are listed in `enabledPlugins` but `app.plugins.plugins` stays empty. Fix: `obsidian eval code="app.plugins.setEnable(true)"`. Persists across service restarts via `~/.config/obsidian/Local Storage/leveldb/` (2026-05-10)
 ## Categories
+
+### Vale / Prose Linting
+- Vale `existence` rules: `raw:` is a single concatenated regex; for multiple distinct patterns use `tokens:` instead. Multi-item `raw:` lists silently fail to load (no parse error, just no fires) (2026-06-16)
+- For Unicode character regex in Vale (em-dashes, smart quotes), use explicit Go code points like `\x{2014}` and `[\x{2018}\x{2019}...]` instead of literal characters. Literal curly quotes are editor-rendering-ambiguous (U+2018 vs U+201B look identical) (2026-06-16)
+- When adding a Vale rule family to MasonBase, also add `tests/fixtures/<family>-{bad,good}.md` plus matching assertions in `tests/run.sh`. The fixture system IS the eval harness; bare smoke-testing misses too-tight regexes that catch the obvious cases but miss realistic-bad ones (2026-06-16)
+- For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb (2026-05-10)
