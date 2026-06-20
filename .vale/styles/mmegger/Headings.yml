@@ -1,8 +1,0 @@
-extends: capitalization
-message: "'%s' should use title-style capitalization. - '%s'"
-level: warning
-scope: heading
-match: $title
-style: Chicago
-exceptions:
-  - macOS

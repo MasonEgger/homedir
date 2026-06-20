@@ -58,7 +58,7 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `dotfiles` | `dotfiles.yml` | Per-user | .zshrc, .vimrc, .tmux.conf, .gitconfig (with GPG/SSH key detection) |
 | `claude` | `claude.yml` | Per-user | .claude directory (settings, skills) + plugin installation from marketplace |
 | `homedir` | `homedir.yml` | Per-user | .homedir scripts, sets executable permissions |
-| `vale` | `vale.yml` | Mixed | Vale binary (system) + .vale.ini config (per-user) |
+| `vale` | `vale.yml` | Mixed | Vale binary (system) + vale-styles repo clone to `~/Code/vale-styles` + `.vale.ini` config (per-user) |
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
 | `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
 | `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services |

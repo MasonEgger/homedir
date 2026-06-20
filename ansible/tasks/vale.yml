@@ -1,6 +1,7 @@
 ---
 # ABOUTME: Vale prose linter installation tasks.
-# Installs Vale binary (on Linux), styles directory and configuration for consistent technical writing checks.
+# Installs Vale binary (on Linux), ensures vale-styles is cloned in-place at
+# ~/Code/vale-styles, and deploys the global .vale.ini that points at it.
 
 # Vale binary installation for Linux (not in apt repos)
 - name: Check if Vale is already installed
@@ -71,25 +72,26 @@
     - vale_temp_dir.path is defined
   tags: vale
 
-# Vale configuration installation
-- name: Check if .vale directory exists
-  ansible.builtin.stat:
-    path: "{{ dotfiles_dir }}/.vale"
-  register: vale_dir
-  tags: vale
-
-- name: Install .vale directory with styles
-  ansible.builtin.copy:
-    src: "{{ dotfiles_dir }}/.vale"
-    dest: "{{ target_home }}/"
-    backup: false
-    mode: preserve
-    directory_mode: '0755'
+# vale-styles: the canonical ruleset is used in-place from ~/Code/vale-styles.
+# The deployed .vale.ini hardcodes that path, so the repo must exist there
+# before `vale` runs against any global-fallback file.
+- name: Ensure Code directory exists for vale-styles clone
+  ansible.builtin.file:
+    path: "{{ target_home }}/Code"
+    state: directory
+    mode: '0755'
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  when: vale_dir.stat.exists
-  register: vale_styles_installed
+  tags: vale
+
+- name: Ensure vale-styles is cloned in-place at ~/Code/vale-styles
+  ansible.builtin.git:
+    repo: https://github.com/MasonEgger/vale-styles.git
+    dest: "{{ target_home }}/Code/vale-styles"
+    update: false   # Mason manages updates manually via `git pull`; ansible only seeds.
+  become: "{{ target_user is defined }}"
+  when: not ansible_check_mode
   tags: vale
 
 - name: Install .vale.ini configuration
@@ -101,12 +103,11 @@
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
   become: "{{ target_user is defined }}"
-  when: vale_dir.stat.exists
   register: vale_config_installed
   tags: vale
 
 - name: Display Vale installation status
   ansible.builtin.debug:
-    msg: "Vale styles and configuration installed at ~/.vale/ and ~/.vale.ini"
-  when: vale_styles_installed.changed or vale_config_installed.changed
+    msg: "Vale config installed at ~/.vale.ini (points at ~/Code/vale-styles/styles)."
+  when: vale_config_installed.changed
   tags: vale
