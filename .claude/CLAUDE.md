@@ -76,6 +76,17 @@ Follow this exact sequence for every commit:
 These rules apply whenever writing any Markdown content: documentation, README files,
 GitHub commit messages, PR descriptions, issue bodies, or any other prose output.
 
+### Line breaks
+
+- **One sentence per line in Markdown source.** Separate paragraphs with a blank
+  line. This keeps diffs and reviews clean: a reworded sentence is a one-line
+  change instead of a whole reflowed paragraph.
+- Applies to committed/diffed prose: docs, READMEs, blog posts, PR/issue bodies,
+  commit message bodies. It does **not** apply to terminal chat replies, where
+  one-per-line reads oddly and nothing is being diffed.
+- Don't hard-wrap mid-sentence to a column width. The break is the sentence
+  boundary, not an arbitrary character count.
+
 ### Diagrams
 
 Pick the format based on **where the diagram will be rendered**, not just that it's
