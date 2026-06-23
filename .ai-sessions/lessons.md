@@ -3,8 +3,10 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Universal Markdown formatting rules go in the always-on global `.claude/CLAUDE.md` (`## Markdown Writing`), not `writing-style.md`, which only auto-loads on prose file paths and would miss commit bodies and inline text. Mirrors the em-dash hard-rule tiering (CLAUDE.md = always-on hard rule, writing-style.md = detailed taxonomy) (2026-06-23)
+- Keep a shared convention in BOTH the content-design skill and the homedir global rule. They are independently distributed artifacts, so DRY-across-them is not the goal; the skill must stay self-contained for anyone who installs the plugin without Mason's personal rules (2026-06-23)
+- This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook complains, and never reach for `--no-verify` to bypass it (2026-06-23)
 - tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) belong in `.zshrc` next to each other, and get documented in the README "Shell Configuration (`.zshrc`)" alias table — **not** the "Terminal Multiplexer Configuration (`.tmux.conf`)" section, which is only for in-session keybindings (2026-06-11)
-- This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook complains — and never reach for `--no-verify` to bypass it (2026-05-31)
 - `claude plugin update <name>@<marketplace>` emits `✔ <name> is already at the latest version (X.Y.Z).` on no-op. Parse with `re.compile(r"\(([^()]*\d[^()]*)\)")` to grab the version; tolerates semver and short commit SHAs alike. Several official plugins omit the version entirely — handle the empty case (2026-05-31)
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
 - To list plugins exposed by a Claude Code marketplace repo: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative — directory listings can mislead when README/LICENSE are mixed with plugin dirs (2026-05-24)
@@ -33,7 +35,7 @@
 - tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) live in `.zshrc` and are documented in the README "Shell Configuration (`.zshrc`)" alias table, not the "Terminal Multiplexer Configuration (`.tmux.conf`)" section (in-session keybindings only) (2026-06-11)
 
 ### Git
-- This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook errors — never reach for `--no-verify` (2026-05-31)
+- This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook errors; never reach for `--no-verify` (2026-06-23)
 
 ### Claude Code Behavior
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
