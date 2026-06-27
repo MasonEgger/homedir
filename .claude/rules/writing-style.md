@@ -116,10 +116,17 @@ every time, not "the engine", "the component", "the utility".
 
 ### Title Case in headings
 
-Use sentence case. Capitalize only the first word and proper nouns.
+Use Title Case for headings. Capitalize the principal words: the first and
+last word, and every noun, pronoun, verb, adjective, and adverb. Lowercase
+short articles, conjunctions, and prepositions (a, an, the, and, or, but,
+of, to, in, on) unless they start the heading.
 
-- Bad: `## Building a Scalable Notification System`
-- Good: `## Building a scalable notification system`
+This is a deliberate personal preference. The Wikipedia source this file is
+adapted from flags Title Case as an AI tell and prefers sentence case; I do
+not. Title Case is my style.
+
+- Good: `## Building a Scalable Notification System`
+- Avoid: `## Building a scalable notification system`
 
 ### Bold-emphasis overuse
 
