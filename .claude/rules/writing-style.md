@@ -304,7 +304,7 @@ These rules are written for prose that humans read. When the *primary consumer* 
 - **Three-part summaries and lists.** "Read SKILL.md, then the mode file, then the citation rules" is fine structured framing for a workflow doc; it would be a tell in a blog post.
 - **Copula replacement.** Plain `is` is still preferred, but constructs like `serves as` or `represents` are tolerated in AI-consumed files when they carry useful semantic weight (e.g., "this section serves as the contract between..."). Do not force replacement when the meaning would weaken.
 - **Elegant variation (synonym churn).** The human rule says repeat words like "parser" rather than swap to "engine" / "component" / "utility." Still preferred in AI-consumed files, but less critical; the model handles synonym variation fine.
-- **Title case in headings.** Cosmetic preference; doesn't affect AI consumption. Mason's projects use sentence case by convention but this is a style choice, not a clarity issue, for AI-read files.
+- **Title case in headings.** Cosmetic preference; doesn't affect AI consumption. Mason uses Title Case in headings by convention, but for AI-read files the casing is a style choice, not a clarity issue.
 
 ### How to tell which mode applies
 
