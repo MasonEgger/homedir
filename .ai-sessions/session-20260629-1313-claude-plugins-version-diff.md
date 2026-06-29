@@ -12,7 +12,9 @@
 - Added `installed_versions()`, which parses `claude plugin list` into a `{plugin@marketplace: version}` map via two new regexes (`LIST_NAME_RE`, `LIST_VERSION_RE`).
 - Changed `sync_plugins()` to snapshot versions once before the loop and print `🚧 updated OLD -> NEW` for real updates; fresh installs and no-op runs still show a single version.
 - Verified the parsing against live `plugin list` output, then ran `ruff check` (only a pre-existing unused-`sys` warning) and `mypy --strict` (clean).
-- Branched to `feat/claude-plugins-version-diff` and committed (commit blocked first run pending this session summary).
+- Branched to `feat/claude-plugins-version-diff` and committed (commit blocked first run pending this session summary). Opened PR #22.
+- Follow-up bug: running the script twice back-to-back still showed `🚧 updated` for six official plugins. Found their `claude plugin update` prints `refreshed from source` (not `already at the latest version`) on every run, and the marketplace gives them `Version: unknown`, so the message-based verdict always fell through to the update fallback.
+- Rewrote `sync_plugins()` to decide the verdict from version state (before vs. after snapshots of `claude plugin list`), not the update message. Unversioned source-refresh plugins now print `🔄 refreshed from source (unversioned)`; real version bumps print `🚧 updated OLD -> NEW`. Removed now-dead `extract_version`/`VERSION_RE`/`ALREADY_LATEST_RE` and the unused `sys` import. ruff + mypy --strict clean; verified two identical back-to-back runs.
 
 ## Prompt Inventory
 
