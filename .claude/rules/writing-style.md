@@ -282,3 +282,40 @@ The contrast. When in doubt, write more like this:
 - Personal preference stated as preference, not as universal fact.
 
 Voice over polish. Polish is where the AI lives.
+
+## 8. Exceptions for AI-consumed instructional files
+
+These rules are written for prose that humans read. When the *primary consumer* of a document is Claude itself (skill instruction files, agent definitions, command prompts, reference docs, eval case files), some of the tells above are actually useful structure for the model. The carve-outs below apply only to AI-consumed files; do not apply them to blog posts, docs for humans, PR descriptions, commit messages, or anything else with a human audience.
+
+### Rules that still apply (clarity helps both consumers)
+
+- **No em-dashes or en-dashes.** Hard prohibition stands regardless of audience.
+- **Banned vocabulary** (`comprehensive`, `robust`, `leverage`, `crucial`, `pivotal`, `delve`, `seamless`, `unlock`, etc.). Vague filler is still vague filler.
+- **Promotional / press-release voice.** Empty calories for any reader.
+- **Vague attribution** ("researchers say", "many experts believe"). Unverifiable claims help nobody.
+- **"Despite challenges, the future is bright" template.** Useless prose pattern.
+- **Banned preambles and sign-offs** ("let's dive into", "in conclusion", "I welcome feedback"). Delays the content.
+- **Smart quotes.** Use straight quotes in source files.
+
+### Rules that DO NOT apply to AI-consumed files
+
+- **Bullet+colon canned format** (`- **Goal:** description`). This pattern is a tell in human prose but is actively useful in AI-consumed instructional text: it provides a parseable label-then-description contract that the model can scan efficiently. Keep it.
+- **Bold on load-bearing terms.** The human-prose rule is "bold for first introduction only." For AI consumption, bolding terms the model should weight in attention is legitimate and helpful. Use it on the actual load-bearing concepts in instructional text.
+- **Three-part summaries and lists.** "Read SKILL.md, then the mode file, then the citation rules" is fine structured framing for a workflow doc; it would be a tell in a blog post.
+- **Copula replacement.** Plain `is` is still preferred, but constructs like `serves as` or `represents` are tolerated in AI-consumed files when they carry useful semantic weight (e.g., "this section serves as the contract between..."). Do not force replacement when the meaning would weaken.
+- **Elegant variation (synonym churn).** The human rule says repeat words like "parser" rather than swap to "engine" / "component" / "utility." Still preferred in AI-consumed files, but less critical; the model handles synonym variation fine.
+- **Title case in headings.** Cosmetic preference; doesn't affect AI consumption. Mason's projects use sentence case by convention but this is a style choice, not a clarity issue, for AI-read files.
+
+### How to tell which mode applies
+
+A file is AI-consumed if all of these are true:
+1. The file lives in a skill, agent, command, or rule directory (e.g. `~/.claude/`, `skills/*/`, `references/*-instructions.md`).
+2. The frontmatter or filename signals "instructions for an agent" (e.g. `SKILL.md`, `CLAUDE.md`, `agent.md`).
+3. Humans only read it when they're editing it; the runtime consumer is the model.
+
+A file is human-consumed if any of these are true:
+1. It's in a blog draft, docs site, README intended for end users, commit message, PR body, or any artifact that ships externally.
+2. It's prose that explains something to a human reader, even if the human is another developer.
+3. It's content bearing Mason's name in any public-facing context.
+
+When in doubt: assume human-consumed and apply the full rules. The carve-out exists to avoid kneecapping AI behavior, not to lower the bar for prose Mason publishes.
