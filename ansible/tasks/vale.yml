@@ -87,7 +87,7 @@
 
 - name: Ensure vale-styles is cloned in-place at ~/Code/vale-styles
   ansible.builtin.git:
-    repo: https://github.com/MasonEgger/vale-styles.git
+    repo: git@github.com:MasonEgger/vale-styles.git
     dest: "{{ target_home }}/Code/vale-styles"
     update: false   # Mason manages updates manually via `git pull`; ansible only seeds.
   become: "{{ target_user is defined }}"
