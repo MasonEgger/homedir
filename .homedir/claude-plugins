@@ -116,7 +116,9 @@ def sync_plugins() -> None:
         # install is idempotent — succeeds even if already installed
         install_result = run_claude(["plugin", "install", qualified])
         if install_result.returncode != 0:
-            failures[qualified] = install_result.stderr.strip() or install_result.stdout.strip()
+            failures[qualified] = (
+                install_result.stderr.strip() or install_result.stdout.strip()
+            )
             print("x", end="", flush=True)
             continue
         install_output = f"{install_result.stdout}\n{install_result.stderr}"
@@ -154,7 +156,9 @@ def sync_plugins() -> None:
 def main() -> None:
     """Entry point."""
     if not ensure_marketplaces():
-        print("\nMarketplace setup had errors. Continuing with available marketplaces...\n")
+        print(
+            "\nMarketplace setup had errors. Continuing with available marketplaces...\n"
+        )
 
     sync_plugins()
     print("\nRun /reload-plugins in Claude Code to activate changes.")
