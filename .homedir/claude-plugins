@@ -11,10 +11,7 @@
 
 import re
 import subprocess
-import sys
 
-VERSION_RE = re.compile(r"\(([^()]*\d[^()]*)\)")
-ALREADY_LATEST_RE = re.compile(r"already at the latest version", re.IGNORECASE)
 FRESH_INSTALL_RE = re.compile(r"already installed", re.IGNORECASE)
 # `claude plugin list` renders each plugin as "❯ name@marketplace" then "Version: X".
 LIST_NAME_RE = re.compile(r"❯\s+(\S+)")
@@ -78,12 +75,6 @@ def ensure_marketplaces() -> bool:
     return ok
 
 
-def extract_version(text: str) -> str | None:
-    """Pull a version-like token out of CLI output, if present."""
-    match = VERSION_RE.search(text)
-    return match.group(1) if match else None
-
-
 def installed_versions() -> dict[str, str]:
     """Map qualified plugin name to its currently installed version."""
     result = run_claude(["plugin", "list"])
@@ -101,39 +92,63 @@ def installed_versions() -> dict[str, str]:
     return versions
 
 
+def show_version(version: str | None) -> str:
+    """Render a version for display, hiding the marketplace's `unknown` sentinel."""
+    return f" {version}" if version and version != "unknown" else ""
+
+
 def sync_plugins() -> None:
-    """Install or update each plugin."""
+    """Install/update each plugin, then report version changes.
+
+    The verdict comes from comparing the installed version before and after,
+    not from the `claude plugin update` message. That message is unreliable:
+    plugins the marketplace leaves unversioned (Version: unknown) are re-pulled
+    on every run and always print "refreshed from source", which would otherwise
+    read as a spurious update on every invocation.
+    """
     before = installed_versions()
+    failures: dict[str, str] = {}
+    freshly: set[str] = set()
+
+    print("Syncing plugins", end="", flush=True)
     for plugin, marketplace in PLUGINS:
         qualified = f"{plugin}@{marketplace}"
-        print(f"Syncing {plugin} ({marketplace})...", end=" ", flush=True)
         # install is idempotent — succeeds even if already installed
         install_result = run_claude(["plugin", "install", qualified])
         if install_result.returncode != 0:
-            print(f"FAILED: {install_result.stderr.strip() or install_result.stdout.strip()}")
+            failures[qualified] = install_result.stderr.strip() or install_result.stdout.strip()
+            print("x", end="", flush=True)
             continue
         install_output = f"{install_result.stdout}\n{install_result.stderr}"
-        freshly_installed = not FRESH_INSTALL_RE.search(install_output)
+        if not FRESH_INSTALL_RE.search(install_output):
+            freshly.add(qualified)
         # update to latest version
         update_result = run_claude(["plugin", "update", qualified])
         if update_result.returncode != 0:
-            print(
-                f"installed, but update FAILED: "
+            failures[qualified] = (
+                "update failed: "
                 f"{update_result.stderr.strip() or update_result.stdout.strip()}"
             )
+            print("x", end="", flush=True)
             continue
-        update_output = f"{update_result.stdout}\n{update_result.stderr}"
-        old_version = before.get(qualified)
-        new_version = extract_version(update_output) or extract_version(install_output)
-        new_suffix = f" {new_version}" if new_version else ""
-        if freshly_installed:
-            print(f"🆕 installed{new_suffix}")
-        elif ALREADY_LATEST_RE.search(update_output):
-            print(f"✓ up to date{new_suffix}")
-        elif old_version and new_version and old_version != new_version:
-            print(f"🚧 updated {old_version} -> {new_version}")
+        print(".", end="", flush=True)
+    print()
+
+    after = installed_versions()
+    for plugin, marketplace in PLUGINS:
+        qualified = f"{plugin}@{marketplace}"
+        label = f"{plugin} ({marketplace})"
+        old, new = before.get(qualified), after.get(qualified)
+        if qualified in failures:
+            print(f"❌ {label}: {failures[qualified]}")
+        elif qualified in freshly:
+            print(f"🆕 {label}: installed{show_version(new)}")
+        elif old and new and old != new:
+            print(f"🚧 {label}: updated {old} -> {new}")
+        elif new and new != "unknown":
+            print(f"✓ {label}: up to date {new}")
         else:
-            print(f"🚧 updated{new_suffix}")
+            print(f"🔄 {label}: refreshed from source (unversioned)")
 
 
 def main() -> None:
