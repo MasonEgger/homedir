@@ -16,6 +16,9 @@ import sys
 VERSION_RE = re.compile(r"\(([^()]*\d[^()]*)\)")
 ALREADY_LATEST_RE = re.compile(r"already at the latest version", re.IGNORECASE)
 FRESH_INSTALL_RE = re.compile(r"already installed", re.IGNORECASE)
+# `claude plugin list` renders each plugin as "❯ name@marketplace" then "Version: X".
+LIST_NAME_RE = re.compile(r"❯\s+(\S+)")
+LIST_VERSION_RE = re.compile(r"Version:\s*(.+)")
 
 MARKETPLACES: list[tuple[str, str]] = [
     # (name, github_repo)
@@ -81,8 +84,26 @@ def extract_version(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+def installed_versions() -> dict[str, str]:
+    """Map qualified plugin name to its currently installed version."""
+    result = run_claude(["plugin", "list"])
+    versions: dict[str, str] = {}
+    current: str | None = None
+    for line in f"{result.stdout}\n{result.stderr}".splitlines():
+        name_match = LIST_NAME_RE.search(line)
+        if name_match:
+            current = name_match.group(1)
+            continue
+        version_match = LIST_VERSION_RE.search(line)
+        if version_match and current:
+            versions[current] = version_match.group(1).strip()
+            current = None
+    return versions
+
+
 def sync_plugins() -> None:
     """Install or update each plugin."""
+    before = installed_versions()
     for plugin, marketplace in PLUGINS:
         qualified = f"{plugin}@{marketplace}"
         print(f"Syncing {plugin} ({marketplace})...", end=" ", flush=True)
@@ -102,14 +123,17 @@ def sync_plugins() -> None:
             )
             continue
         update_output = f"{update_result.stdout}\n{update_result.stderr}"
-        version = extract_version(update_output) or extract_version(install_output)
-        version_suffix = f" {version}" if version else ""
+        old_version = before.get(qualified)
+        new_version = extract_version(update_output) or extract_version(install_output)
+        new_suffix = f" {new_version}" if new_version else ""
         if freshly_installed:
-            print(f"🆕 installed{version_suffix}")
+            print(f"🆕 installed{new_suffix}")
         elif ALREADY_LATEST_RE.search(update_output):
-            print(f"✓ up to date{version_suffix}")
+            print(f"✓ up to date{new_suffix}")
+        elif old_version and new_version and old_version != new_version:
+            print(f"🚧 updated {old_version} -> {new_version}")
         else:
-            print(f"🚧 updated{version_suffix}")
+            print(f"🚧 updated{new_suffix}")
 
 
 def main() -> None:

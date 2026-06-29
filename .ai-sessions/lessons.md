@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- To report a plugin's OLD -> NEW version on update, snapshot versions before syncing by parsing `claude plugin list`: each entry renders as `❯ name@marketplace` then a `Version: X` line. Values can be `unknown` or a git short-SHA, so compare as plain strings, not semver (2026-06-29)
 - Ansible `git:` tasks cloning a private repo over an `https://github.com/...` URL prompt for GitHub username/password (and password auth on the API died in 2021, so it never works). Use the SSH remote `git@github.com:owner/repo.git` instead. Caveat: SSH needs a registered key, so it fails on fresh `mmegger`-style users who have none (2026-06-29)
 - Universal Markdown formatting rules go in the always-on global `.claude/CLAUDE.md` (`## Markdown Writing`), not `writing-style.md`, which only auto-loads on prose file paths and would miss commit bodies and inline text. Mirrors the em-dash hard-rule tiering (CLAUDE.md = always-on hard rule, writing-style.md = detailed taxonomy) (2026-06-23)
 - Keep a shared convention in BOTH the content-design skill and the homedir global rule. They are independently distributed artifacts, so DRY-across-them is not the goal; the skill must stay self-contained for anyone who installs the plugin without Mason's personal rules (2026-06-23)
@@ -11,7 +12,6 @@
 - `claude plugin update <name>@<marketplace>` emits `✔ <name> is already at the latest version (X.Y.Z).` on no-op. Parse with `re.compile(r"\(([^()]*\d[^()]*)\)")` to grab the version; tolerates semver and short commit SHAs alike. Several official plugins omit the version entirely — handle the empty case (2026-05-31)
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
 - To list plugins exposed by a Claude Code marketplace repo: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative — directory listings can mislead when README/LICENSE are mixed with plugin dirs (2026-05-24)
-- For dotfiles in this repo: edit sources at `~/Code/MasonEgger/homedir/.claude/` and `~/Code/MasonEgger/homedir/.homedir/`, not the synced live copies at `~/.claude/`/`~/.homedir/`. `ansible-playbook ansible/setup.yml --tags claude,homedir` propagates (2026-05-24)
 ## Categories
 
 ### Vale / Prose Linting
@@ -21,6 +21,7 @@
 - For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
+- `claude plugin list` reports each plugin as `❯ name@marketplace` then `Version: X`. Snapshot it into a `{name@marketplace: version}` map before running updates to report OLD -> NEW. Versions can be `unknown` or a git short-SHA, so compare as strings (2026-06-29)
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb (2026-05-10)
 - Reading asar/binary strings (`strings file | grep`) is a useful pattern for reverse-engineering JSON config keys in Electron apps (2026-05-10)
 - nvm install: prefer `git clone https://github.com/nvm-sh/nvm.git ~/.nvm` over `curl … | bash` — the classifier blocks the latter (2026-05-10)
