@@ -1,0 +1,65 @@
+name: CI
+
+# Only run when the things this workflow actually checks change, to keep
+# GitHub Actions usage down.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".homedir/**"
+      - "ansible/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - ".homedir/**"
+      - "ansible/**"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  python:
+    name: Lint and type-check .homedir scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Collect uv scripts
+        id: collect
+        # The .homedir scripts have no .py extension; find the uv ones by shebang.
+        run: |
+          files=$(grep -rlE '^#!.*uv run --script' .homedir | sort | tr '\n' ' ')
+          echo "Found: $files"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: ruff check
+        run: uvx ruff check ${{ steps.collect.outputs.files }}
+
+      - name: ruff format --check
+        run: uvx ruff format --check ${{ steps.collect.outputs.files }}
+
+      - name: mypy --strict
+        # Each script is its own __main__, so mypy must check them one at a time.
+        run: |
+          for f in ${{ steps.collect.outputs.files }}; do
+            echo "== mypy --strict $f =="
+            uvx mypy --strict "$f"
+          done
+
+  ansible:
+    name: Ansible syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible and collections
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Syntax check
+        run: ansible-playbook ansible/setup.yml --syntax-check
