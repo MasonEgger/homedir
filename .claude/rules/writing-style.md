@@ -294,15 +294,17 @@ Voice over polish. Polish is where the AI lives.
 
 These rules are written for prose that humans read. When the *primary consumer* of a document is Claude itself (skill instruction files, agent definitions, command prompts, reference docs, eval case files), some of the tells above are actually useful structure for the model. The carve-outs below apply only to AI-consumed files; do not apply them to blog posts, docs for humans, PR descriptions, commit messages, or anything else with a human audience.
 
-### Rules that still apply (clarity helps both consumers)
+### Rules that still apply (contagion control)
 
-- **No em-dashes or en-dashes.** Hard prohibition stands regardless of audience.
-- **Banned vocabulary** (`comprehensive`, `robust`, `leverage`, `crucial`, `pivotal`, `delve`, `seamless`, `unlock`, etc.). Vague filler is still vague filler.
+Style present in context leaks into generated output. Anthropic's prompting guidance says to match prompt style to desired output style, and that removing a style from the prompt reduces it in the output; examples steer harder than instructions. Skill files sit in the context window while Claude writes prose that bears my name, so they follow the same punctuation and vocabulary rules as human prose. Researched and confirmed 2026-07-19: punctuation has no measurable effect on machine comprehension, so the scrub costs almost nothing (about 2% more tokens) and buys contagion control.
+
+- **No em-dashes or en-dashes.** Not for the model's comprehension; because a context full of em-dashes reinforces the model's strongest bad output habit.
+- **Banned vocabulary** (`comprehensive`, `robust`, `leverage`, `crucial`, `pivotal`, `delve`, `seamless`, `unlock`, etc.). An instruction file that says "comprehensive" is a standing in-context example teaching the output to say it.
 - **Promotional / press-release voice.** Empty calories for any reader.
 - **Vague attribution** ("researchers say", "many experts believe"). Unverifiable claims help nobody.
 - **"Despite challenges, the future is bright" template.** Useless prose pattern.
 - **Banned preambles and sign-offs** ("let's dive into", "in conclusion", "I welcome feedback"). Delays the content.
-- **Smart quotes.** Use straight quotes in source files.
+- **Smart quotes.** Use straight quotes in source files. In AI-consumed files this is load-bearing beyond style: curly quotes sit next to code and shell snippets the model copies verbatim, and a copied curly quote breaks the command.
 
 ### Rules that DO NOT apply to AI-consumed files
 
