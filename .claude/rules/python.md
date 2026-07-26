@@ -6,10 +6,14 @@ paths:
   - "**/*.j2"
   - "**/*.jinja"
   - "**/*.jinja2"
+  - "**/alembic/**"
+  - "**/migrations/**"
 ---
 
-## Python work → load the `python` skill
+## Python work: load the `python` skill
 
-You are touching Python code or config. **Before writing, editing, or reviewing it, invoke the `python` skill** (Skill tool, name `python` — from the `mmegger-plugins` marketplace). That skill is the single source of truth for Python standards: strict typing, ruff/mypy/pytest/nox, uv workflows, and idioms.
+You are touching Python code or config. **Before writing, editing, or reviewing it, invoke the `python` skill** (Skill tool, name `python`, from the `mmegger-plugins` marketplace). That skill is the single source of truth for Python standards: strict typing, ruff/mypy/pytest, uv workflows, and idioms.
 
-Do not work from remembered Python rules — load the skill so the current standards apply. This file is only a pointer; it intentionally holds no standards of its own (they live in the skill).
+The `alembic` and `migrations` globs are here on purpose: the python skill now carries the SQLAlchemy rules (`references/sqlalchemy.md`), replacing the old `database.md` rule file. Do not remove them as inert.
+
+Do not work from remembered Python rules; load the skill so the current standards apply. This file is only a pointer; it intentionally holds no standards of its own (they live in the skill).

@@ -40,15 +40,24 @@ PLUGINS: list[tuple[str, str]] = [
     ("slack", "claude-plugins-official"),
     ("telegram", "claude-plugins-official"),
     ("bpe", "mmegger-plugins"),
-    ("python", "mmegger-plugins"),
     ("content-design", "mmegger-private-plugins"),
     ("health", "mmegger-private-plugins"),
     ("indie", "mmegger-private-plugins"),
     ("productivity", "mmegger-private-plugins"),
+    ("python", "mmegger-private-plugins"),
     ("example-skills", "anthropic-agent-skills"),
     ("obsidian", "obsidian-skills"),
     ("slidev", "slidev-plugins"),
     ("temporal", "temporal-marketplace"),
+]
+
+STALE_PLUGINS: list[str] = [
+    # Superseded installs to remove if present. python moved to the private
+    # marketplace (v2.0.0, 2026-07); productivity and writing left the public
+    # repo for the private marketplace long ago but were never uninstalled.
+    "python@mmegger-plugins",
+    "productivity@mmegger-plugins",
+    "writing@mmegger-plugins",
 ]
 
 
@@ -58,6 +67,7 @@ def run_claude(args: list[str]) -> subprocess.CompletedProcess[str]:
         ["claude", *args],
         capture_output=True,
         text=True,
+        check=False,  # callers branch on returncode
     )
 
 
@@ -95,6 +105,18 @@ def installed_versions() -> dict[str, str]:
 def show_version(version: str | None) -> str:
     """Render a version for display, hiding the marketplace's `unknown` sentinel."""
     return f" {version}" if version and version != "unknown" else ""
+
+
+def remove_stale_plugins() -> None:
+    """Uninstall superseded plugins; a plugin that is not installed is silent.
+
+    Runs before sync so a plugin migrating between marketplaces (same plugin
+    name, new home) never has two installs competing for the same commands.
+    """
+    for qualified in STALE_PLUGINS:
+        result = run_claude(["plugin", "uninstall", qualified])
+        if result.returncode == 0:
+            print(f"🗑️ {qualified}: uninstalled (superseded)")
 
 
 def sync_plugins() -> None:
@@ -160,6 +182,7 @@ def main() -> None:
             "\nMarketplace setup had errors. Continuing with available marketplaces...\n"
         )
 
+    remove_stale_plugins()
     sync_plugins()
     print("\nRun /reload-plugins in Claude Code to activate changes.")
 
