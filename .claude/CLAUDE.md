@@ -1,7 +1,7 @@
 # Development Guidelines for Claude
 
 Always-on rules live here. Task-specific rules live in `.claude/rules/` and load
-conditionally via `paths:` frontmatter (currently: code-style, database, python, writing-style).
+conditionally via `paths:` frontmatter (currently: code-style, python, writing-style).
 
 ## Writing Voice
 
@@ -78,37 +78,9 @@ GitHub commit messages, PR descriptions, issue bodies, or any other prose output
 
 ### Line breaks
 
-- **One sentence per line in Markdown source.** Separate paragraphs with a blank
-  line. This keeps diffs and reviews clean: a reworded sentence is a one-line
-  change instead of a whole reflowed paragraph.
-- Applies to committed/diffed prose: docs, READMEs, blog posts, PR/issue bodies,
-  commit message bodies. It does **not** apply to terminal chat replies, where
-  one-per-line reads oddly and nothing is being diffed.
-- Don't hard-wrap mid-sentence to a column width. The break is the sentence
-  boundary, not an arbitrary character count.
+**One sentence per line in committed Markdown prose**, blank line between paragraphs; reasoning and edge cases in `~/.claude/rules/writing-style.md` §9.
 
 ### Diagrams
 
-Pick the format based on **where the diagram will be rendered**, not just that it's
-Markdown:
-
-- **When writing to a file or anywhere a Markdown renderer will display it**
-  (docs, READMEs, PR descriptions, issue/comment bodies, commit message bodies,
-  GitHub-rendered content), **always use Mermaid**. Wrap it in a fenced code block
-  with the `mermaid` language tag:
-
-  ````markdown
-  ```mermaid
-  flowchart TD
-      A[Start] --> B[End]
-  ```
-  ````
-
-- **When the diagram appears only in terminal chat output** (i.e., the assistant's
-  reply text in this CLI session, which has no Mermaid renderer), **use ASCII /
-  Unicode box-drawing diagrams** so the human can actually read them. Mermaid in
-  chat shows up as unparsed source and is unreadable.
-
-Rule of thumb: if it's going into a file or onto GitHub → Mermaid. If it's only
-being spoken in the terminal → ASCII. Never paste a Mermaid code block into chat
-expecting it to render.
+**Mermaid** in files and anything GitHub renders; **ASCII box-drawing** in terminal chat, where Mermaid shows up as unparsed source.
+Details and the fence syntax are in `~/.claude/rules/writing-style.md` §10.

@@ -17,7 +17,7 @@
     "slack@claude-plugins-official": true,
     "telegram@claude-plugins-official": true,
     "bpe@mmegger-plugins": true,
-    "python@mmegger-plugins": true,
+    "python@mmegger-private-plugins": true,
     "content-design@mmegger-private-plugins": true,
     "health@mmegger-private-plugins": true,
     "indie@mmegger-private-plugins": true,

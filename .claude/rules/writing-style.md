@@ -328,3 +328,33 @@ A file is human-consumed if any of these are true:
 3. It's content bearing Mason's name in any public-facing context.
 
 When in doubt: assume human-consumed and apply the full rules. The carve-out exists to avoid kneecapping AI behavior, not to lower the bar for prose Mason publishes.
+
+## 9. Markdown Line Breaks
+
+The one-line rule lives in `~/.claude/CLAUDE.md`; this is the reasoning and the edge cases.
+
+One sentence per line in Markdown source. Separate paragraphs with a blank line.
+This keeps diffs and reviews clean: a reworded sentence is a one-line change instead of a whole reflowed paragraph.
+Applies to committed/diffed prose: docs, READMEs, blog posts, PR/issue bodies, commit message bodies.
+It does **not** apply to terminal chat replies, where one-per-line reads oddly and nothing is being diffed.
+Don't hard-wrap mid-sentence to a column width. The break is the sentence boundary, not an arbitrary character count.
+
+## 10. Diagrams
+
+The two-line rule lives in `~/.claude/CLAUDE.md`; this is the full version.
+Pick the format based on **where the diagram will be rendered**, not just that it's Markdown.
+
+- **When writing to a file or anywhere a Markdown renderer will display it** (docs, READMEs, PR descriptions, issue/comment bodies, commit message bodies, GitHub-rendered content), **always use Mermaid**.
+  Wrap it in a fenced code block with the `mermaid` language tag:
+
+  ````markdown
+  ```mermaid
+  flowchart TD
+      A[Start] --> B[End]
+  ```
+  ````
+
+- **When the diagram appears only in terminal chat output** (the assistant's reply text in a CLI session, which has no Mermaid renderer), **use ASCII / Unicode box-drawing diagrams** so the human can actually read them.
+  Mermaid in chat shows up as unparsed source and is unreadable.
+
+Rule of thumb: if it's going into a file or onto GitHub, use Mermaid. If it's only being spoken in the terminal, use ASCII. Never paste a Mermaid code block into chat expecting it to render.

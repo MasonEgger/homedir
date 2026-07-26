@@ -27,8 +27,7 @@ paths:
 
 ## Writing Code
 
-- Always follow a Test Driven Development Mindset
-  - Write tests first, then minimal code to pass, then refactor. Repeat for each feature/bugfix.
+- Follow TDD (tests first, minimal code to pass, refactor); the python skill's `tdd-workflow.md` is canonical for scope (mandatory for applications and libraries, exempt for CLI scripts and one-offs).
 - Prefer simple, clean, maintainable solutions over clever ones. Readability is primary.
 - Realize that sometimes the best solution is to remove, not to add.
 - Always adhere to best practices for the given language/tool you are writing.
@@ -63,4 +62,3 @@ paths:
 - DO NOT test trivial code (getters, setters, simple assignments).
 - Test behavior and outcomes, not implementation details.
 - When uncertain: "Am I testing MY code's logic, or verifying that a library works?"
-- Module-level mutable state (dicts, lists, caches) needs an `autouse` fixture that clears it between tests. Write the fixture during RED, not as a REFACTOR afterthought.
