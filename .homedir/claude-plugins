@@ -21,7 +21,7 @@ MARKETPLACES: list[tuple[str, str]] = [
     # (name, github_repo)
     ("anthropic-agent-skills", "anthropics/skills"),
     ("claude-plugins-official", "anthropics/claude-plugins-official"),
-    ("mmegger-plugins", "MasonEgger/bpe-claude-code-plugin"),
+    ("bpe", "MasonEgger/bpe-claude-code-plugin"),
     ("mmegger-private-plugins", "MasonEgger/claude-code-plugin-private"),
     ("obsidian-skills", "kepano/obsidian-skills"),
     ("slidev-plugins", "slidevjs/slidev"),
@@ -39,7 +39,7 @@ PLUGINS: list[tuple[str, str]] = [
     ("skill-creator", "claude-plugins-official"),
     ("slack", "claude-plugins-official"),
     ("telegram", "claude-plugins-official"),
-    ("bpe", "mmegger-plugins"),
+    ("bpe", "bpe"),
     ("content-design", "mmegger-private-plugins"),
     ("health", "mmegger-private-plugins"),
     ("indie", "mmegger-private-plugins"),
@@ -52,12 +52,20 @@ PLUGINS: list[tuple[str, str]] = [
 ]
 
 STALE_PLUGINS: list[str] = [
-    # Superseded installs to remove if present. python moved to the private
-    # marketplace (v2.0.0, 2026-07); productivity and writing left the public
-    # repo for the private marketplace long ago but were never uninstalled.
+    # Superseded installs to remove if present. bpe re-keyed when its
+    # marketplace renamed from mmegger-plugins to bpe (2026-07-28); python
+    # moved to the private marketplace (v2.0.0, 2026-07); productivity and
+    # writing left the public repo long ago but were never uninstalled.
+    "bpe@mmegger-plugins",
     "python@mmegger-plugins",
     "productivity@mmegger-plugins",
     "writing@mmegger-plugins",
+]
+
+STALE_MARKETPLACES: list[str] = [
+    # Registrations superseded by a rename; removed after their stale
+    # plugins are uninstalled. mmegger-plugins became bpe (2026-07-28).
+    "mmegger-plugins",
 ]
 
 
@@ -105,6 +113,14 @@ def installed_versions() -> dict[str, str]:
 def show_version(version: str | None) -> str:
     """Render a version for display, hiding the marketplace's `unknown` sentinel."""
     return f" {version}" if version and version != "unknown" else ""
+
+
+def remove_stale_marketplaces() -> None:
+    """Deregister renamed marketplaces; one that is not registered is silent."""
+    for name in STALE_MARKETPLACES:
+        result = run_claude(["plugin", "marketplace", "remove", name])
+        if result.returncode == 0:
+            print(f"🗑️ marketplace {name}: removed (renamed)")
 
 
 def remove_stale_plugins() -> None:
@@ -183,6 +199,7 @@ def main() -> None:
         )
 
     remove_stale_plugins()
+    remove_stale_marketplaces()
     sync_plugins()
     print("\nRun /reload-plugins in Claude Code to activate changes.")
 
