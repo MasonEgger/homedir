@@ -4,7 +4,12 @@
   },
   "includeCoAuthoredBy": false,
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(gh issue create:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)"
+    ]
   },
   "enabledPlugins": {
     "asana@claude-plugins-official": true,
@@ -16,7 +21,7 @@
     "skill-creator@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
     "telegram@claude-plugins-official": true,
-    "bpe@mmegger-plugins": true,
+    "bpe@bpe": true,
     "python@mmegger-private-plugins": true,
     "content-design@mmegger-private-plugins": true,
     "health@mmegger-private-plugins": true,
@@ -38,12 +43,6 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
-      }
-    },
-    "mmegger-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "MasonEgger/claude-code-plugin"
       }
     },
     "mmegger-private-plugins": {
@@ -69,7 +68,14 @@
         "source": "github",
         "repo": "temporalio/claude-temporal-plugin"
       }
+    },
+    "bpe": {
+      "source": {
+        "source": "github",
+        "repo": "MasonEgger/bpe-claude-code-plugin"
+      }
     }
   },
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "model": "claude-fable-5[1m]"
 }
