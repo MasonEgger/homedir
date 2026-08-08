@@ -12,15 +12,9 @@
     ]
   },
   "enabledPlugins": {
-    "asana@claude-plugins-official": true,
-    "discord@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "playground@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
     "plugin-dev@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "telegram@claude-plugins-official": true,
     "bpe@bpe": true,
     "python@mmegger-private-plugins": true,
     "content-design@mmegger-private-plugins": true,

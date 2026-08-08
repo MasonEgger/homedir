@@ -30,21 +30,16 @@ MARKETPLACES: list[tuple[str, str]] = [
 
 PLUGINS: list[tuple[str, str]] = [
     # (plugin_name, marketplace)
-    ("asana", "claude-plugins-official"),
-    ("discord", "claude-plugins-official"),
     ("frontend-design", "claude-plugins-official"),
-    ("playground", "claude-plugins-official"),
-    ("playwright", "claude-plugins-official"),
     ("plugin-dev", "claude-plugins-official"),
     ("skill-creator", "claude-plugins-official"),
-    ("slack", "claude-plugins-official"),
-    ("telegram", "claude-plugins-official"),
     ("bpe", "bpe"),
     ("content-design", "mmegger-private-plugins"),
     ("health", "mmegger-private-plugins"),
     ("indie", "mmegger-private-plugins"),
     ("productivity", "mmegger-private-plugins"),
     ("python", "mmegger-private-plugins"),
+    ("document-skills", "anthropic-agent-skills"),
     ("example-skills", "anthropic-agent-skills"),
     ("obsidian", "obsidian-skills"),
     ("slidev", "slidev-plugins"),
@@ -60,6 +55,15 @@ STALE_PLUGINS: list[str] = [
     "python@mmegger-plugins",
     "productivity@mmegger-plugins",
     "writing@mmegger-plugins",
+    # Unused after a 2026-08-08 /doctor pass: zero invocations in 43 sessions
+    # over 29 days. example-skills kept (claude-api and the doc/design skills);
+    # obsidian kept (productivity depends on it). Re-add to PLUGINS to restore.
+    "asana@claude-plugins-official",
+    "discord@claude-plugins-official",
+    "playground@claude-plugins-official",
+    "playwright@claude-plugins-official",
+    "slack@claude-plugins-official",
+    "telegram@claude-plugins-official",
 ]
 
 STALE_MARKETPLACES: list[str] = [
