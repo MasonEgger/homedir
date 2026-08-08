@@ -3,21 +3,21 @@
 - name: Update Homebrew (macOS)
   community.general.homebrew:
     update_homebrew: true
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts['os_family'] == "Darwin"
   tags: packages
 
 - name: Install packages via Homebrew (macOS)
   community.general.homebrew:
     name: "{{ brew_packages }}"
     state: present
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts['os_family'] == "Darwin"
   tags: packages
 
 - name: Update apt cache (Ubuntu/Debian)
   ansible.builtin.apt:
     update_cache: true
   become: true
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
   tags: packages
 
 - name: Install packages via apt (Ubuntu/Debian)
@@ -25,7 +25,7 @@
     name: "{{ apt_packages }}"
     state: present
   become: true
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
   tags: packages
 
 # Install kubectl on Linux (already available via brew on macOS as kubernetes-cli)
@@ -38,12 +38,12 @@
 - name: Install kubectl (Linux)
   ansible.builtin.shell: |
     cd /tmp
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}/kubectl"
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}/kubectl"
     chmod +x kubectl
     mv kubectl /usr/local/bin/
   become: true
   changed_when: true
-  when: not kubectl_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
+  when: not kubectl_check.stat.exists and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
   tags: packages
 
 # Install just from GitHub releases on Linux (already available via brew on macOS)
@@ -60,7 +60,7 @@
     curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
   become: true
   changed_when: true
-  when: not just_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
+  when: not just_check.stat.exists and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
   tags: packages
 
 # Install lychee from GitHub releases on Linux (already available via brew on macOS)
@@ -73,12 +73,12 @@
 - name: Install lychee from GitHub releases (Linux)
   ansible.builtin.shell: |
     cd /tmp
-    ARCH="{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
+    ARCH="{{ 'aarch64' if ansible_facts['architecture'] == 'aarch64' else 'x86_64' }}"
     curl -s https://api.github.com/repos/lycheeverse/lychee/releases/latest | grep "browser_download_url.*lychee-${ARCH}-unknown-linux-gnu.tar.gz" | cut -d '"' -f 4 | xargs curl -L -o lychee.tar.gz
     tar -xzf lychee.tar.gz
     mv lychee /usr/local/bin/
     rm lychee.tar.gz
   become: true
   changed_when: true
-  when: not lychee_check.stat.exists and ansible_os_family == "Debian" and not ansible_check_mode
+  when: not lychee_check.stat.exists and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
   tags: packages

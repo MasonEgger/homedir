@@ -17,7 +17,7 @@
     return_content: true
   register: vale_release
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
   tags: vale
 
@@ -27,7 +27,7 @@
     suffix: vale
   register: vale_temp_dir
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
   tags: vale
 
@@ -36,7 +36,7 @@
     url: "https://github.com/errata-ai/vale/releases/download/{{ vale_release.json.tag_name }}/vale_{{ vale_release.json.tag_name | regex_replace('^v', '') }}_Linux_64-bit.tar.gz"
     dest: "{{ vale_temp_dir.path }}/vale.tar.gz"
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
   tags: vale
 
@@ -46,7 +46,7 @@
     dest: "{{ vale_temp_dir.path }}"
     remote_src: true
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
   tags: vale
 
@@ -58,7 +58,7 @@
     mode: '0755'
     remote_src: true
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
   tags: vale
 
@@ -67,7 +67,7 @@
     path: "{{ vale_temp_dir.path }}"
     state: absent
   when:
-    - ansible_system == "Linux"
+    - ansible_facts['system'] == "Linux"
     - vale_check.rc != 0
     - vale_temp_dir.path is defined
   tags: vale
