@@ -6,7 +6,7 @@
   community.general.homebrew_cask:
     name: tailscale
     state: latest
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts['os_family'] == "Darwin"
   tags: tailscale
 
 # Debian/Ubuntu - use official install script for repo setup, then apt for updates
@@ -15,7 +15,7 @@
   ansible.builtin.stat:
     path: /etc/apt/sources.list.d/tailscale.list
   register: tailscale_repo_check
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
   tags: tailscale
 
 - name: Install Tailscale via official script (Debian/Ubuntu)
@@ -23,7 +23,7 @@
   become: true
   changed_when: true
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts['os_family'] == "Debian"
     - not (tailscale_repo_check.stat.exists | default(false))
     - not ansible_check_mode
   tags: tailscale
@@ -35,6 +35,6 @@
     update_cache: true
   become: true
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts['os_family'] == "Debian"
     - tailscale_repo_check.stat.exists | default(false)
   tags: tailscale

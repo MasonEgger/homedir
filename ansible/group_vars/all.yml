@@ -67,4 +67,4 @@ apt_packages:
 dotfiles_dir: "{{ playbook_dir | dirname }}"
 
 # Target home directory for per-user installs (overridden by mmegger tag)
-target_home: "{{ ansible_user_dir }}"
+target_home: "{{ ansible_facts['user_dir'] }}"
