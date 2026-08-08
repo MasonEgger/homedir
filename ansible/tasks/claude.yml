@@ -1,16 +1,20 @@
 ---
 # .claude Directory Installation — COPY strategy with stale-file cleanup.
 #
-# The repo is the source of truth. Every deploy:
+# The repo is the source of truth for most of the .claude tree. Every deploy:
 #   1. Replaces ~/.claude/CLAUDE.md with the repo copy.
 #   2. WIPES ~/.claude/rules/ and re-copies it from the repo, so any file
 #      that no longer exists in the repo (e.g. error-handling.md after the
 #      consolidation refactor) is removed from live.
-#   3. Replaces ~/.claude/settings.json with the repo copy.
+#   3. MERGES ~/.claude/settings.json: repo-managed keys are written from the
+#      repo, but the machine-local keys (model, theme, skipWorkflowUsageWarning,
+#      enabledPlugins, extraKnownMarketplaces) are preserved from the live file.
+#      See the settings.json tasks below.
 #
-# Ad-hoc edits to those three tracked entries between deploys are lost on
-# the next run — that is the design. If you want a change to persist, make
-# it in the repo and commit.
+# Ad-hoc edits to CLAUDE.md and rules/ between deploys are lost on the next
+# run: that is the design. For settings.json, only the machine-local keys above
+# survive; repo-managed keys are overwritten. To persist a repo-managed change,
+# make it in the repo and commit.
 #
 # Per-machine runtime files (history.jsonl, backups/, cache/, file-history/,
 # .credentials.json, .last-update-result.json, settings.local.json) are NOT
@@ -96,14 +100,54 @@
   become: "{{ target_user is defined }}"
   tags: claude
 
-- name: Install ~/.claude/settings.json from repo
+# settings.json is MERGED, not overwritten. The repo owns most keys, but these
+# are machine-local and must survive every deploy. The repo copy still supplies
+# them as bootstrap defaults on a fresh machine (no live file), but never
+# overwrites an existing live value:
+#   model                    - the user's /model choice
+#   theme                    - per-machine appearance
+#   skipWorkflowUsageWarning - per-machine UX flag
+#   enabledPlugins           - owned by the claude-plugins script
+#   extraKnownMarketplaces   - owned by the claude-plugins script
+- name: Read the live ~/.claude/settings.json if it exists
+  ansible.builtin.slurp:
+    src: "{{ target_home }}/.claude/settings.json"
+  register: claude_settings_live_raw
+  failed_when: false
+  when: claude_dir.stat.exists
+  become: "{{ target_user is defined }}"
+  tags: claude
+
+- name: Extract the machine-local keys to preserve across the deploy
+  ansible.builtin.set_fact:
+    claude_settings_local: >-
+      {{
+        ((claude_settings_live_raw.content | b64decode | from_json)
+          if claude_settings_live_raw.content is defined else {})
+        | dict2items
+        | selectattr('key', 'in', claude_settings_machine_local_keys)
+        | items2dict
+      }}
+  vars:
+    claude_settings_machine_local_keys:
+      - model
+      - theme
+      - skipWorkflowUsageWarning
+      - enabledPlugins
+      - extraKnownMarketplaces
+  when: claude_dir.stat.exists
+  tags: claude
+
+- name: Install ~/.claude/settings.json (repo baseline, machine-local keys preserved)
   ansible.builtin.copy:
-    src: "{{ dotfiles_dir }}/.claude/settings.json"
+    content: >-
+      {{ (lookup('file', dotfiles_dir ~ '/.claude/settings.json') | from_json
+          | combine(claude_settings_local)) | to_nice_json(indent=2) }}
     dest: "{{ target_home }}/.claude/settings.json"
     mode: '0644'
     owner: "{{ target_user | default(omit) }}"
     group: "{{ target_user | default(omit) }}"
-    backup: false
+    backup: true
   when: claude_dir.stat.exists
   become: "{{ target_user is defined }}"
   tags: claude
