@@ -1,6 +1,7 @@
 ---
 # ABOUTME: Per-user tool installs via curl scripts and npm.
-# Installs Oh My Zsh, Claude Code CLI, uv, and Todoist CLI into the target user's home directory.
+# Installs Oh My Zsh, Claude Code CLI, uv, Node (via nvm), the Todoist CLI, and
+# pnpm into the target user's home directory. Node comes from nvm, not apt.
 
 # Oh My Zsh
 - name: Install Oh My Zsh (target user)
@@ -66,9 +67,67 @@
   when: target_user is not defined and not uv_check.stat.exists and not ansible_check_mode
   tags: user-tools
 
-# Todoist CLI (official Doist npm package)
+# Node.js via nvm (official install path), NOT apt. Distro node lags hard:
+# Ubuntu ships node 18, but the Todoist CLI needs node >=24. macOS gets a
+# current node from the brew `node` package, so nvm is Ubuntu/Debian only.
+# nvm lives under ~/.nvm and its prefix is user-writable, so `npm install -g`
+# needs no sudo and no prefix override.
+- name: Ensure nvm + Node LTS (target user, Ubuntu/Debian)
+  ansible.builtin.shell: >-
+    su - {{ target_user }} -s /bin/bash -c '
+    export NVM_DIR="$HOME/.nvm";
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR"; fi;
+    . "$NVM_DIR/nvm.sh";
+    if ! nvm which --lts >/dev/null 2>&1; then nvm install --lts && nvm alias default "lts/*"; fi'
+  become: true
+  changed_when: true
+  when: target_user is defined and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
+  tags: user-tools
+
+- name: Ensure nvm + Node LTS (current user, Ubuntu/Debian)
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+      git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR"
+    fi
+    . "$NVM_DIR/nvm.sh"
+    if ! nvm which --lts >/dev/null 2>&1; then
+      nvm install --lts
+      nvm alias default 'lts/*'
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when: target_user is not defined and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
+  tags: user-tools
+
+# Source nvm in the interactive shell so `td`/`todo` (installed under nvm's
+# node) resolve. nvm is OS-specific, so this goes in ~/.zshrc.local (durable,
+# never clobbered by the .zshrc copy) rather than the cross-OS tracked .zshrc.
+- name: Source nvm from ~/.zshrc.local (Ubuntu/Debian)
+  ansible.builtin.blockinfile:
+    path: "{{ target_home }}/.zshrc.local"
+    marker: "# {mark} ANSIBLE MANAGED nvm"
+    create: true
+    mode: "0644"
+    block: |
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  when: ansible_facts['os_family'] == "Debian"
+  tags: user-tools
+
+# Todoist CLI (official Doist npm package), installed under nvm's node.
+# Guard on the npm package, not `command -v td`: `td` collides with the
+# `td=tmux detach` shell alias, so a name check can false-positive and skip
+# the install. Querying npm's global list checks the actual package.
 - name: Check if Todoist CLI is installed
-  ansible.builtin.shell: command -v td
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null 2>&1
+    npm ls -g --depth=0 @doist/todoist-cli
+  args:
+    executable: /bin/bash
   register: todoist_cli_check
   changed_when: false
   failed_when: false
@@ -76,22 +135,35 @@
 
 - name: Install Todoist CLI (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c 'npm install -g @doist/todoist-cli'
+    su - {{ target_user }} -s /bin/bash -c '
+    export NVM_DIR="$HOME/.nvm";
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null;
+    npm install -g @doist/todoist-cli'
   become: true
   changed_when: true
   when: target_user is defined and todoist_cli_check.rc != 0 and not ansible_check_mode
   tags: user-tools
 
 - name: Install Todoist CLI (current user)
-  ansible.builtin.shell: npm install -g @doist/todoist-cli
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null
+    npm install -g @doist/todoist-cli
+  args:
+    executable: /bin/bash
   changed_when: true
   when: target_user is not defined and todoist_cli_check.rc != 0 and not ansible_check_mode
   tags: user-tools
 
-# pnpm via corepack (ships with Node.js >= 16.13)
+# pnpm via corepack (bundled with Node), enabled under nvm's node.
 # Required by the slidev Claude Code skill and any other pnpm-based workflows
 - name: Check if pnpm is installed
-  ansible.builtin.shell: command -v pnpm
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null 2>&1
+    command -v pnpm
+  args:
+    executable: /bin/bash
   register: pnpm_check
   changed_when: false
   failed_when: false
@@ -99,15 +171,22 @@
 
 - name: Enable pnpm via corepack (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c
-    'corepack enable pnpm && corepack prepare pnpm@latest --activate'
+    su - {{ target_user }} -s /bin/bash -c '
+    export NVM_DIR="$HOME/.nvm";
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null;
+    corepack enable pnpm && corepack prepare pnpm@latest --activate'
   become: true
   changed_when: true
   when: target_user is defined and pnpm_check.rc != 0 and not ansible_check_mode
   tags: user-tools
 
 - name: Enable pnpm via corepack (current user)
-  ansible.builtin.shell: corepack enable pnpm && corepack prepare pnpm@latest --activate
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null
+    corepack enable pnpm && corepack prepare pnpm@latest --activate
+  args:
+    executable: /bin/bash
   changed_when: true
   when: target_user is not defined and pnpm_check.rc != 0 and not ansible_check_mode
   tags: user-tools

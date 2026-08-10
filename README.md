@@ -80,6 +80,7 @@ ansible-playbook ansible/setup.yml --tags dotfiles --check --diff
 | `tn` | Create a new tmux session (unnamed if no name) | `tn [session]` |
 | `ts` | Switch to another tmux session from inside tmux (last session if no name) | `ts [session]` |
 | `td` | Detach from the current tmux session | `td` |
+| `todo` | Todoist CLI (`@doist/todoist-cli`; bypasses the `td=tmux detach` alias) | `todo <command>` |
 
 **Additional Configuration:**
 - **Shell**: Zsh with Oh My Zsh (geoffgarside theme)
@@ -156,7 +157,7 @@ Claude Code plugins (BPE workflow, writing toolkit, productivity commands) live 
 │   │   └── all.yml               # Package lists and configuration
 │   ├── tasks/                    # Modular task definitions
 │   │   ├── packages.yml          # System packages (apt/brew)
-│   │   ├── user-tools.yml        # Per-user tools (Oh My Zsh, Claude CLI, uv)
+│   │   ├── user-tools.yml        # Per-user tools (Oh My Zsh, Claude CLI, uv, Todoist CLI, pnpm)
 │   │   ├── dotfiles.yml          # Core dotfiles installation
 │   │   ├── claude.yml            # .claude directory + plugin installation
 │   │   ├── homedir.yml           # .homedir scripts installation

@@ -129,9 +129,13 @@
     - not ansible_check_mode
   tags: obsidian
 
-- name: Add nvm sourcing to .zshrc (idempotent block)
+# nvm is OS-specific, so its sourcing goes in ~/.zshrc.local (durable, never
+# clobbered by the .zshrc copy) rather than the cross-OS tracked .zshrc. Same
+# marker/content as the user-tools task, so whichever tag runs, the block is
+# managed identically.
+- name: Add nvm sourcing to .zshrc.local (idempotent block)
   ansible.builtin.blockinfile:
-    path: "{{ ansible_facts['user_dir'] }}/.zshrc"
+    path: "{{ ansible_facts['user_dir'] }}/.zshrc.local"
     marker: "# {mark} ANSIBLE MANAGED nvm"
     create: true
     mode: "0644"

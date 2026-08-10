@@ -65,7 +65,10 @@ ansible-playbook setup.yml --extra-vars "exclude_claude=true"
 
 ## Components
 
-- **packages**: System packages (brew/apt) and uv Python package manager
+- **packages**: System packages (brew/apt). Node is deliberately *not* installed from apt (Ubuntu ships an ancient node 18); see **user-tools**.
+- **user-tools**: Per-user tools installed via curl scripts and npm (Oh My Zsh, Claude Code CLI, uv, Node, Todoist CLI, pnpm). On Ubuntu/Debian, Node comes from **nvm** (Node LTS, currently 24), because apt's node is too old for the Todoist CLI (needs node ≥24); macOS gets a current node from the brew `node` package. nvm's prefix is user-writable, so `npm install -g` needs no sudo. Interactive nvm sourcing is written to `~/.zshrc.local` (the OS-specific, non-clobbered dotfile), not the cross-OS tracked `.zshrc`. The Todoist CLI (`@doist/todoist-cli`) provides the `td` binary, invoked as `todo` in the shell to sidestep the `td=tmux detach` alias.
+
+  **Headless auth:** the CLI stores its token in the system keyring by default, which fails on a headless box with no Secret Service daemon (`AUTH_STORE_WRITE_FAILED`). Authenticate with the plaintext store instead, which writes the token to the CLI's config file: `todo auth login --credential-store plaintext` (OAuth) or `todo auth token <API_TOKEN> --credential-store plaintext` (personal token from Todoist → Settings → Integrations → Developer). The `--credential-store` flag is only needed at store time; reads find the token automatically afterward. This is a per-user auth step, not something ansible provisions.
 - **dotfiles**: Core dotfiles (.zshrc, .vimrc, .tmux.conf, etc.)
 - **claude**: .claude directory with Claude Code settings and commands
 - **homedir**: .homedir directory with custom utility scripts
@@ -102,6 +105,7 @@ ansible/
 │   └── all.yml         # Package lists and configuration variables
 ├── tasks/              # Modular task definitions
 │   ├── packages.yml    # Package management tasks
+│   ├── user-tools.yml  # Per-user tools (Oh My Zsh, Claude CLI, uv, Todoist CLI, pnpm)
 │   ├── dotfiles.yml    # Core dotfiles installation
 │   ├── claude.yml      # .claude directory installation
 │   └── homedir.yml     # .homedir directory installation
