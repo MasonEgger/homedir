@@ -1,13 +1,15 @@
-# ABOUTME: Vale prose linter configuration. Global fallback used by `vale`
-# when run from a directory without its own `.vale.ini`. Mirrors the
-# canonical template at ~/Code/vale-styles/.vale.ini.template so the global
-# fallback enforces the same shared rules as project-local configs.
+# ABOUTME: Vale prose linter configuration (Jinja template). Rendered by ansible
+# to ~/.vale.ini as the global fallback used by `vale` when run from a directory
+# without its own `.vale.ini`. StylesPath is templated from `target_home` so the
+# rendered path is correct on every OS. Mirrors the canonical template at
+# ~/Code/MasonEgger/vale-styles/.vale.ini.template so the global fallback
+# enforces the same shared rules as project-local configs.
 #
 # Per-project overrides (turning a rule off, raising/lowering a severity, or
 # adding a project-only glob) belong in that project's own .vale.ini after
 # copying the template.
 
-StylesPath = /home/mmegger/Code/vale-styles/styles
+StylesPath = {{ target_home }}/Code/MasonEgger/vale-styles/styles
 
 # error | warning | suggestion
 MinAlertLevel = suggestion
