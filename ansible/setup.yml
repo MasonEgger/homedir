@@ -49,6 +49,11 @@
       when: ansible_facts['os_family'] == "Debian"
       tags: [never, mmegger]
 
+    - name: Include parameterized user setup tasks (Debian only)
+      ansible.builtin.include_tasks: tasks/user.yml
+      when: ansible_facts['os_family'] == "Debian"
+      tags: [never, new-user]
+
     # Summary
     - name: Installation summary
       ansible.builtin.debug:
@@ -65,6 +70,7 @@
           - "Obsidian installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'obsidian' in ansible_run_tags else 'Skipped' }}"
           - "Tailscale installed/updated: {{ 'Yes' if ansible_run_tags == ['all'] or 'tailscale' in ansible_run_tags else 'Skipped' }}"
           - "mmegger user setup (Debian): {{ 'Yes' if 'mmegger' in ansible_run_tags else 'Skipped' }}"
+          - "New user setup (Debian): {{ new_user_name if 'new-user' in ansible_run_tags else 'Skipped' }}"
           - ""
           - "{{ 'Setup complete! You may need to:' if not ansible_check_mode else 'This was a check mode run. To actually install, run without --check' }}"
           - "{{ '- Restart your shell or run: source ~/.zshrc' if not ansible_check_mode else '' }}"

@@ -3,6 +3,9 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
+- `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
+- Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
 - Don't decide a plugin's update verdict from the `claude plugin update` message. Versioned plugins print `already at the latest version (X)`, but plugins the marketplace leaves `Version: unknown` (asana, frontend-design, playground, playwright, plugin-dev, skill-creator) print `refreshed from source` on EVERY run, which reads as a spurious update. Compare the installed version before vs. after instead (2026-06-29)
 - To report a plugin's OLD -> NEW version on update, snapshot versions before syncing by parsing `claude plugin list`: each entry renders as `❯ name@marketplace` then a `Version: X` line. Values can be `unknown` or a git short-SHA, so compare as plain strings, not semver (2026-06-29)
 - Ansible `git:` tasks cloning a private repo over an `https://github.com/...` URL prompt for GitHub username/password (and password auth on the API died in 2021, so it never works). Use the SSH remote `git@github.com:owner/repo.git` instead. Caveat: SSH needs a registered key, so it fails on fresh `mmegger`-style users who have none (2026-06-29)
@@ -10,8 +13,6 @@
 - Keep a shared convention in BOTH the content-design skill and the homedir global rule. They are independently distributed artifacts, so DRY-across-them is not the goal; the skill must stay self-contained for anyone who installs the plugin without Mason's personal rules (2026-06-23)
 - This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook complains, and never reach for `--no-verify` to bypass it (2026-06-23)
 - tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) belong in `.zshrc` next to each other, and get documented in the README "Shell Configuration (`.zshrc`)" alias table — **not** the "Terminal Multiplexer Configuration (`.tmux.conf`)" section, which is only for in-session keybindings (2026-06-11)
-- Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
-- To list plugins exposed by a Claude Code marketplace repo: `gh api repos/OWNER/REPO/contents/.claude-plugin/marketplace.json --jq '.content' | base64 -d`. Authoritative — directory listings can mislead when README/LICENSE are mixed with plugin dirs (2026-05-24)
 ## Categories
 
 ### Vale / Prose Linting
@@ -21,6 +22,7 @@
 - For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
+- `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
 - `claude plugin list` reports each plugin as `❯ name@marketplace` then `Version: X`. Snapshot it into a `{name@marketplace: version}` map before running updates to report OLD -> NEW. Versions can be `unknown` or a git short-SHA, so compare as strings (2026-06-29)
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb (2026-05-10)
 - Reading asar/binary strings (`strings file | grep`) is a useful pattern for reverse-engineering JSON config keys in Electron apps (2026-05-10)
@@ -28,6 +30,7 @@
 - Auto-mode classifier blocks `curl … | bash` for installer scripts. Use `git clone` from the upstream repo instead — same result, no piped script execution (2026-05-10)
 
 ### Workflow / Sync
+- Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
 - When initializing sync between an authoritative source and a fresh/empty target, always start in `pull-only` mode to prevent the empty side from overwriting the source (2026-05-10)
 - For interactive sub-steps in setup flows, use `! <command>` to hand control to the user instead of trying to automate around them (2026-05-10)
 - Two-pass Ansible flow for interactive tools: pass 1 = install + services, user does interactive setup, pass 2 = finish wiring with `-e` vars (2026-05-10)
@@ -37,6 +40,7 @@
 - tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) live in `.zshrc` and are documented in the README "Shell Configuration (`.zshrc`)" alias table, not the "Terminal Multiplexer Configuration (`.tmux.conf`)" section (in-session keybindings only) (2026-06-11)
 
 ### Git
+- Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 - This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook errors; never reach for `--no-verify` (2026-06-23)
 - Ansible `git:` tasks cloning a private repo over `https://github.com/...` prompt for GitHub username/password (API password auth died in 2021, so it never succeeds). Use the SSH remote `git@github.com:owner/repo.git`. Caveat: SSH needs a registered key, so it fails on fresh `mmegger` users who have none (2026-06-29)
 

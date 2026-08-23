@@ -25,6 +25,14 @@ ansible-playbook ansible/setup.yml --tags mmegger       # Full mmegger user setu
 
 The `mmegger` tag is self-contained: installs all system packages and tools, creates the user, sets up SSH with sshid.io keys, hardens SSH, then installs all per-user configs (Oh My Zsh, dotfiles, Claude CLI, uv, .claude directory, .homedir scripts, vale config, git hooks).
 
+**3. Fresh install for any other user** (remote Debian/Ubuntu server):
+```bash
+ansible-playbook ansible/setup.yml --tags new-user -e new_user_name=alice
+```
+
+`new-user` runs `tasks/user.yml` directly: user creation, SSH bootstrap and hardening, and all per-user configs, without the system package step.
+Override `new_user_shell`, `new_user_home`, `new_user_groups`, `new_user_password`, `new_user_email`, or `new_user_sshid_user` with `-e` as needed (defaults in `ansible/group_vars/all.yml`).
+
 **Modular Installation Options (sync scenario):**
 ```bash
 ansible-playbook ansible/setup.yml --tags packages      # System packages only (apt/brew + kubectl, just, lychee)
@@ -62,24 +70,28 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
 | `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
 | `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services |
-| `mmegger` | `mmegger.yml` | Both | Full user provisioning — hidden tag (`[never, mmegger]`) |
+| `new-user` | `user.yml` | Both | Parameterized user provisioning driven by `new_user_*` vars: creates user, SSH bootstrap + hardening, per-user configs. Hidden tag (`[never, new-user]`) |
+| `mmegger` | `mmegger.yml` | Both | System packages, then `user.yml` with `new_user_name: mmegger`. Hidden tag (`[never, mmegger]`) |
 
 ### Target User Pattern
 
 Task files support two modes via the `target_user` / `target_home` variables:
 
 - **Undefined** (sync scenario): runs as current user, no privilege escalation
-- **Defined** (mmegger scenario): `mmegger.yml` re-includes task files with `vars: { target_home: /home/mmegger, target_user: mmegger }`
+- **Defined** (mmegger / new-user scenario): `user.yml` re-includes task files with `vars: { target_home: "{{ new_user_home }}", target_user: "{{ new_user_name }}" }`
 
 Per-user shell tasks (user-tools.yml) use `su - {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. Each task has two variants: `(target user)` and `(current user)`.
 
-### mmegger Provisioning Order
+### Provisioning Order
 
-The ordering in `mmegger.yml` matters:
-1. **System packages** (packages, vale binary, tailscale) — no user needed
-2. **User creation** (ensure zsh, create user, force password change)
-3. **SSH setup** (authorized_keys, sshid.io keys, key generation, SSH hardening)
-4. **Per-user configs** (user-tools, dotfiles, claude, homedir, git-hooks)
+`mmegger.yml` runs the system package step, then includes `user.yml`, which owns the rest. The ordering matters:
+1. **System packages** (packages, obsidian, tailscale): `mmegger.yml` only, no user needed
+2. **User creation** (ensure zsh, ensure docker group, create user with temp password)
+3. **SSH setup** (root authorized_keys, sshid.io keys, key generation, SSH hardening)
+4. **Per-user configs** (user-tools, vale, dotfiles, claude, homedir, git-hooks)
+5. **Wrap-up** (force password change on first login, print the generated public key)
+
+Every task in `user.yml` carries both the `mmegger` and `new-user` tags so either entry point reaches it.
 
 Variables in `ansible/group_vars/all.yml` define package lists and defaults.
 
@@ -165,5 +177,5 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 ### Adding a New Ansible Task
 1. Create a new task file in `ansible/tasks/`
 2. Add an `include_tasks` entry in `setup.yml` with a tag
-3. If it should run during mmegger provisioning, add an include in `mmegger.yml` at the appropriate point in the ordering (system vs. per-user)
+3. If it should run during user provisioning, add an include in `mmegger.yml` (system-level) or `user.yml` (per-user, tagged `[mmegger, new-user]`) at the appropriate point in the ordering
 4. Update the installation summary in `setup.yml`

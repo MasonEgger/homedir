@@ -67,3 +67,13 @@ dotfiles_dir: "{{ playbook_dir | dirname }}"
 
 # Target home directory for per-user installs (overridden by mmegger tag)
 target_home: "{{ ansible_facts['user_dir'] }}"
+# Parameterized user creation (tasks/user.yml). new_user_name has no default;
+# pass it with -e new_user_name=NAME. The mmegger tag sets it for you.
+new_user_shell: /bin/zsh
+new_user_home: "/home/{{ new_user_name }}"
+new_user_groups:
+  - sudo
+  - docker
+new_user_password: changeme123
+new_user_email: "{{ new_user_name }}@{{ ansible_facts['fqdn'] }}"
+new_user_sshid_user: "{{ new_user_name }}"
