@@ -80,7 +80,7 @@ Task files support two modes via the `target_user` / `target_home` variables:
 - **Undefined** (sync scenario): runs as current user, no privilege escalation
 - **Defined** (mmegger / new-user scenario): `user.yml` re-includes task files with `vars: { target_home: "{{ new_user_home }}", target_user: "{{ new_user_name }}" }`
 
-Per-user shell tasks (user-tools.yml) use `su - {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. Each task has two variants: `(target user)` and `(current user)`.
+Per-user shell tasks (user-tools.yml, claude.yml) use `runuser -l {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. `runuser` rather than `su -` because su's PAM account check enforces the `chage -d 0` password expiry and would fail every re-run. Each task has two variants: `(target user)` and `(current user)`.
 
 ### Provisioning Order
 
