@@ -88,7 +88,7 @@ Per-user shell tasks (user-tools.yml) use `su - {{ target_user }}` instead of An
 1. **System packages** (packages, obsidian, tailscale): `mmegger.yml` only, no user needed
 2. **User creation** (ensure zsh, ensure docker group, create user with temp password)
 3. **SSH setup** (root authorized_keys, sshid.io keys, key generation, SSH hardening)
-4. **Per-user configs** (user-tools, vale, dotfiles, claude, homedir, git-hooks)
+4. **Per-user configs** (user-tools, vale, dotfiles, homedir, claude, git-hooks). homedir must precede claude: the target-user plugin install runs `~/.homedir/claude-plugins`
 5. **Wrap-up** (force password change on first login, print the generated public key)
 
 Every task in `user.yml` carries both the `mmegger` and `new-user` tags so either entry point reaches it.

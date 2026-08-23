@@ -3,6 +3,9 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Test Ansible provisioning on a throwaway droplet immediately, not after `--check`: `doctl compute droplet create NAME --image ubuntu-24-04-x64 --size s-2vcpu-2gb --region nyc3 --ssh-keys ID --wait`, then clone the branch there and run. Snap `doctl` cannot read `~/.ssh`, so copy the pubkey to `~/key.pub` for `ssh-key import` (2026-08-23)
+- `su - USER -c CMD` with a zsh login shell is non-interactive and skips `.zshrc`, so `~/.local/bin` (uv, claude) is off PATH. Use `su - USER -s /bin/bash -c 'PATH=$HOME/.local/bin:$PATH CMD'`. And after `chage -d 0`, never verify with `su -`; it blocks on the password prompt. Use `runuser -u USER -- bash -lc` (2026-08-23)
+- Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
 - Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 - `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
 - Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
@@ -10,9 +13,6 @@
 - To report a plugin's OLD -> NEW version on update, snapshot versions before syncing by parsing `claude plugin list`: each entry renders as `❯ name@marketplace` then a `Version: X` line. Values can be `unknown` or a git short-SHA, so compare as plain strings, not semver (2026-06-29)
 - Ansible `git:` tasks cloning a private repo over an `https://github.com/...` URL prompt for GitHub username/password (and password auth on the API died in 2021, so it never works). Use the SSH remote `git@github.com:owner/repo.git` instead. Caveat: SSH needs a registered key, so it fails on fresh `mmegger`-style users who have none (2026-06-29)
 - Universal Markdown formatting rules go in the always-on global `.claude/CLAUDE.md` (`## Markdown Writing`), not `writing-style.md`, which only auto-loads on prose file paths and would miss commit bodies and inline text. Mirrors the em-dash hard-rule tiering (CLAUDE.md = always-on hard rule, writing-style.md = detailed taxonomy) (2026-06-23)
-- Keep a shared convention in BOTH the content-design skill and the homedir global rule. They are independently distributed artifacts, so DRY-across-them is not the goal; the skill must stay self-contained for anyone who installs the plugin without Mason's personal rules (2026-06-23)
-- This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook complains, and never reach for `--no-verify` to bypass it (2026-06-23)
-- tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) belong in `.zshrc` next to each other, and get documented in the README "Shell Configuration (`.zshrc`)" alias table — **not** the "Terminal Multiplexer Configuration (`.tmux.conf`)" section, which is only for in-session keybindings (2026-06-11)
 ## Categories
 
 ### Vale / Prose Linting
@@ -22,6 +22,7 @@
 - For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
+- Test Ansible provisioning on a throwaway droplet immediately, not after `--check`: `doctl compute droplet create NAME --image ubuntu-24-04-x64 --size s-2vcpu-2gb --region nyc3 --ssh-keys ID --wait`, then clone the branch there and run. Snap `doctl` cannot read `~/.ssh`, so copy the pubkey to `~/key.pub` for `ssh-key import` (2026-08-23)
 - `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
 - `claude plugin list` reports each plugin as `❯ name@marketplace` then `Version: X`. Snapshot it into a `{name@marketplace: version}` map before running updates to report OLD -> NEW. Versions can be `unknown` or a git short-SHA, so compare as strings (2026-06-29)
 - For Electron-based desktop apps on a headless server, try `--ozone-platform=headless --disable-gpu --disable-software-rasterizer` before reaching for Xvfb (2026-05-10)
@@ -30,6 +31,7 @@
 - Auto-mode classifier blocks `curl … | bash` for installer scripts. Use `git clone` from the upstream repo instead — same result, no piped script execution (2026-05-10)
 
 ### Workflow / Sync
+- Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
 - Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
 - When initializing sync between an authoritative source and a fresh/empty target, always start in `pull-only` mode to prevent the empty side from overwriting the source (2026-05-10)
 - For interactive sub-steps in setup flows, use `! <command>` to hand control to the user instead of trying to automate around them (2026-05-10)
@@ -58,6 +60,7 @@
 - `obsidian-headless` (`ob` command) is sync/publish-only — for full vault interaction you need the desktop app running (use `--ozone-platform=headless`) (2026-05-10)
 
 ### Linux / systemd
+- `su - USER -c CMD` with a zsh login shell is non-interactive and skips `.zshrc`, so `~/.local/bin` (uv, claude) is off PATH. Use `su - USER -s /bin/bash -c 'PATH=$HOME/.local/bin:$PATH CMD'`. And after `chage -d 0`, never verify with `su -`; it blocks on the password prompt. Use `runuser -u USER -- bash -lc` (2026-08-23)
 - systemd `--user` services need `sudo loginctl enable-linger <user>` for 24/7 persistence across logout and reboot (2026-05-10)
 - Verify server timezone (`timedatectl`) at start of time-sensitive setups; default cloud servers are usually UTC (2026-05-10)
 

@@ -110,10 +110,13 @@
     marker: "# {mark} ANSIBLE MANAGED nvm"
     create: true
     mode: "0644"
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
     block: |
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
       [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  become: "{{ target_user is defined }}"
   when: ansible_facts['os_family'] == "Debian"
   tags: user-tools
 

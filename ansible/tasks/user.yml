@@ -190,9 +190,11 @@
     target_user: "{{ new_user_name }}"
   tags: [mmegger, new-user]
 
-- name: Include .claude directory tasks for {{ new_user_name }}
+# .homedir must land before .claude: the target-user plugin install runs
+# ~/.homedir/claude-plugins.
+- name: Include .homedir directory tasks for {{ new_user_name }}
   ansible.builtin.include_tasks:
-    file: claude.yml
+    file: homedir.yml
     apply:
       tags: [mmegger, new-user]
   vars:
@@ -200,9 +202,9 @@
     target_user: "{{ new_user_name }}"
   tags: [mmegger, new-user]
 
-- name: Include .homedir directory tasks for {{ new_user_name }}
+- name: Include .claude directory tasks for {{ new_user_name }}
   ansible.builtin.include_tasks:
-    file: homedir.yml
+    file: claude.yml
     apply:
       tags: [mmegger, new-user]
   vars:
@@ -224,11 +226,30 @@
 # Wrap-up
 # =============================================================================
 
+# Marker file rather than new_user_result.changed: a run that dies after the
+# user exists but before this point would otherwise never force the change.
+- name: Check for the provisioned marker of {{ new_user_name }}
+  ansible.builtin.stat:
+    path: "{{ new_user_home }}/.ansible-user-provisioned"
+  register: new_user_provisioned
+  become: true
+  tags: [mmegger, new-user]
+
 - name: Force password change on next login
   ansible.builtin.command: chage -d 0 {{ new_user_name }}
   become: true
-  when: new_user_result.changed
+  when: not new_user_provisioned.stat.exists
   changed_when: true
+  tags: [mmegger, new-user]
+
+- name: Write the provisioned marker for {{ new_user_name }}
+  ansible.builtin.copy:
+    content: "Written by ansible/tasks/user.yml. Delete to re-force a password change on the next run.\n"
+    dest: "{{ new_user_home }}/.ansible-user-provisioned"
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: '0644'
+  become: true
   tags: [mmegger, new-user]
 
 - name: Read SSH public key for {{ new_user_name }}

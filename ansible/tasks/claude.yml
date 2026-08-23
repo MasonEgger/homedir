@@ -152,9 +152,12 @@
   become: "{{ target_user is defined }}"
   tags: claude
 
+# Login shell via bash, not the user's zsh: a non-interactive zsh login shell
+# skips .zshrc, so ~/.local/bin (uv, claude) would be missing from PATH.
 - name: Install Claude Code plugins (target user)
-  ansible.builtin.shell: |
-    su - {{ target_user }} -c "{{ target_home }}/.homedir/claude-plugins"
+  ansible.builtin.shell: >-
+    su - {{ target_user }} -s /bin/bash -c
+    'PATH="$HOME/.local/bin:$PATH" {{ target_home }}/.homedir/claude-plugins'
   when: target_user is defined
   become: true
   tags: claude
