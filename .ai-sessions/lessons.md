@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 - After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
 - Ansible `creates:` skips the command but `changed_when: true` still reports changed. Drop the override and let `creates` decide, or print a marker to stdout and key `changed_when` on it (2026-08-23)
@@ -12,7 +13,6 @@
 - Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 - `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
 - Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
-- Don't decide a plugin's update verdict from the `claude plugin update` message. Versioned plugins print `already at the latest version (X)`, but plugins the marketplace leaves `Version: unknown` (asana, frontend-design, playground, playwright, plugin-dev, skill-creator) print `refreshed from source` on EVERY run, which reads as a spurious update. Compare the installed version before vs. after instead (2026-06-29)
 ## Categories
 
 ### Vale / Prose Linting
@@ -22,6 +22,7 @@
 - For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
+- `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
 - Test Ansible provisioning on a throwaway droplet immediately, not after `--check`: `doctl compute droplet create NAME --image ubuntu-24-04-x64 --size s-2vcpu-2gb --region nyc3 --ssh-keys ID --wait`, then clone the branch there and run. Snap `doctl` cannot read `~/.ssh`, so copy the pubkey to `~/key.pub` for `ssh-key import` (2026-08-23)
 - `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
