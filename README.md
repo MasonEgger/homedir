@@ -23,7 +23,7 @@ $ ansible-playbook ansible/setup.yml    # Install everything for current user
 ansible-playbook ansible/setup.yml --tags mmegger    # Full mmegger user setup
 ```
 
-The `mmegger` tag is self-contained: creates the user, hardens SSH, and then installs all packages, dotfiles, and tools for the mmegger user.
+The `mmegger` tag is self-contained: installs system packages, creates the user, hardens SSH (only once a key is present, so it can't lock you out), installs all dotfiles and tools for the mmegger user, then installs Tailscale. Obsidian is excluded (it's a per-user, interactive install); run `--tags obsidian` yourself after first login.
 
 **Fresh install for any other user** (remote Debian/Ubuntu server):
 ```bash

@@ -50,7 +50,10 @@
       tags: [never, mmegger]
 
     - name: Include parameterized user setup tasks (Debian only)
-      ansible.builtin.include_tasks: tasks/user.yml
+      ansible.builtin.include_tasks:
+        file: tasks/user.yml
+        apply:
+          tags: [new-user]
       when: ansible_facts['os_family'] == "Debian"
       tags: [never, new-user]
 

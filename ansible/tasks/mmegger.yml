@@ -1,9 +1,11 @@
 ---
 # ABOUTME: Full mmegger user setup on Debian/Ubuntu systems.
-# Installs system packages, then wraps user.yml with mmegger-specific values.
+# System packages first, then the user account and its per-user configs, then
+# the system daemons whose network installs must not gate account creation.
 
 # =============================================================================
-# System packages (runs as root, no user needed)
+# 1. System packages (root, no user needed). Must run before user.yml: the
+#    per-user tooling in user-tools.yml needs git and curl from apt.
 # =============================================================================
 
 - name: Include package management tasks for mmegger
@@ -15,22 +17,10 @@
     target_home: /home/mmegger
   tags: mmegger
 
-- name: Include Obsidian tasks for mmegger
-  ansible.builtin.include_tasks:
-    file: obsidian.yml
-    apply:
-      tags: mmegger
-  tags: mmegger
-
-- name: Include Tailscale tasks for mmegger
-  ansible.builtin.include_tasks:
-    file: tailscale.yml
-    apply:
-      tags: mmegger
-  tags: mmegger
-
 # =============================================================================
-# User creation, SSH, and per-user configs (parameterized in user.yml)
+# 2. User account, SSH bootstrap + hardening, and per-user configs. Created as
+#    early as the packages dependency allows, so a failure in a later step
+#    never leaves the box without a usable, reachable mmegger account.
 # =============================================================================
 
 - name: Include parameterized user setup for mmegger
@@ -42,3 +32,22 @@
     new_user_name: mmegger
     new_user_email: mason@masonegger.com
   tags: mmegger
+
+# =============================================================================
+# 3. System daemons whose install is a flaky network fetch. Ordered AFTER the
+#    account so a tailscale failure cannot block user creation.
+# =============================================================================
+
+- name: Include Tailscale tasks for mmegger
+  ansible.builtin.include_tasks:
+    file: tailscale.yml
+    apply:
+      tags: mmegger
+  tags: mmegger
+
+# =============================================================================
+# Obsidian is intentionally NOT part of this flow. obsidian.yml is a per-user,
+# systemctl --user, two-pass interactive install (ob login / ob sync-setup) that
+# only works correctly when run AS the logged-in user. Run it after first login:
+#   ssh mmegger@host  then  cd ~/homedir && ansible-playbook ansible/setup.yml --tags obsidian
+# =============================================================================

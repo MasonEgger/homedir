@@ -3,6 +3,9 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Provisioning order: create the user account + SSH as early as dependencies allow, and run flaky network installs (tailscale `curl|sh`, obsidian) AFTER, so their failure can't leave a box with no login. `curl|sh` daemons are order-independent from user creation; put them last (2026-08-30)
+- `systemctl --user` / `loginctl enable-linger` only work cleanly when run AS the logged-in user; automating them for a not-yet-logged-in account via become is fragile (needs linger-first + XDG_RUNTIME_DIR everywhere). For per-user interactive services (obsidian headless), make it a self-service post-login step, not part of root provisioning (2026-08-30)
+- Never disable `PasswordAuthentication` without asserting the account has >=1 authorized_key; best-effort key sources (root copy, sshid.io) can both miss and lock you out. Gate the hardening on a `grep -c '^ssh-' authorized_keys` count (2026-08-30)
 - Obsidian's GitHub `releases/latest` is often mobile-only (APK, no AppImage); the reliable desktop version pointer is `desktop-releases.json`'s `latestVersion` (its `downloadUrl` is the .asar.gz, not the AppImage). And `ansible.builtin.git` defaults `recursive: yes` — cloning nvm pulls an SSH-only test submodule that fails on keyless boxes; set `recursive: false` (2026-08-30)
 - sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
 - `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
@@ -10,9 +13,6 @@
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
 - Ansible `creates:` skips the command but `changed_when: true` still reports changed. Drop the override and let `creates` decide, or print a marker to stdout and key `changed_when` on it (2026-08-23)
 - Test Ansible provisioning on a throwaway droplet immediately, not after `--check`: `doctl compute droplet create NAME --image ubuntu-24-04-x64 --size s-2vcpu-2gb --region nyc3 --ssh-keys ID --wait`, then clone the branch there and run. Snap `doctl` cannot read `~/.ssh`, so copy the pubkey to `~/key.pub` for `ssh-key import` (2026-08-23)
-- `su - USER -c CMD` with a zsh login shell is non-interactive and skips `.zshrc`, so `~/.local/bin` (uv, claude) is off PATH. Use `su - USER -s /bin/bash -c 'PATH=$HOME/.local/bin:$PATH CMD'`. And after `chage -d 0`, never verify with `su -`; it blocks on the password prompt. Use `runuser -u USER -- bash -lc` (2026-08-23)
-- Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
-- Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 ## Categories
 
 ### Vale / Prose Linting
@@ -33,6 +33,7 @@
 - Auto-mode classifier blocks `curl … | bash` for installer scripts. Use `git clone` from the upstream repo instead — same result, no piped script execution (2026-05-10)
 
 ### Workflow / Sync
+- Provisioning order: create the user account + SSH as early as dependencies allow, and run flaky network installs (tailscale `curl|sh`, obsidian) AFTER, so their failure can't leave a box with no login. `curl|sh` daemons are order-independent from user creation; put them last (2026-08-30)
 - Ansible `creates:` skips the command but `changed_when: true` still reports changed. Drop the override and let `creates` decide, or print a marker to stdout and key `changed_when` on it (2026-08-23)
 - Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
 - Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
@@ -45,6 +46,7 @@
 - tmux *session* helpers (`ta`/`tn`/`td`/`tl`/`ts`) live in `.zshrc` and are documented in the README "Shell Configuration (`.zshrc`)" alias table, not the "Terminal Multiplexer Configuration (`.tmux.conf`)" section (in-session keybindings only) (2026-06-11)
 
 ### Git
+- Never disable `PasswordAuthentication` without asserting the account has >=1 authorized_key; best-effort key sources (root copy, sshid.io) can both miss and lock you out. Gate the hardening on a `grep -c '^ssh-' authorized_keys` count (2026-08-30)
 - Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 - This repo's pre-commit hook refuses commits when no fresh AI session summary is present (even with `-S` and on `main`). Run `/bpe:session-summary` **before** `git commit`, not after the hook errors; never reach for `--no-verify` (2026-06-23)
 - Ansible `git:` tasks cloning a private repo over `https://github.com/...` prompt for GitHub username/password (API password auth died in 2021, so it never succeeds). Use the SSH remote `git@github.com:owner/repo.git`. Caveat: SSH needs a registered key, so it fails on fresh `mmegger` users who have none (2026-06-29)
@@ -64,6 +66,7 @@
 - `obsidian-headless` (`ob` command) is sync/publish-only — for full vault interaction you need the desktop app running (use `--ozone-platform=headless`) (2026-05-10)
 
 ### Linux / systemd
+- `systemctl --user` / `loginctl enable-linger` only work cleanly when run AS the logged-in user; automating them for a not-yet-logged-in account via become is fragile (needs linger-first + XDG_RUNTIME_DIR everywhere). For per-user interactive services (obsidian headless), make it a self-service post-login step, not part of root provisioning (2026-08-30)
 - After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
 - `su - USER -c CMD` with a zsh login shell is non-interactive and skips `.zshrc`, so `~/.local/bin` (uv, claude) is off PATH. Use `su - USER -s /bin/bash -c 'PATH=$HOME/.local/bin:$PATH CMD'`. And after `chage -d 0`, never verify with `su -`; it blocks on the password prompt. Use `runuser -u USER -- bash -lc` (2026-08-23)
 - systemd `--user` services need `sudo loginctl enable-linger <user>` for 24/7 persistence across logout and reboot (2026-05-10)

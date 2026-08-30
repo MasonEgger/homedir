@@ -144,13 +144,39 @@
   changed_when: true
   tags: [mmegger, new-user]
 
+# Lockout guard: never disable password auth unless the account has at least
+# one usable public key. Both key sources are best-effort (root's key is copied
+# only if it exists; sshid.io keys only on HTTP 200), so with neither, hardening
+# would leave the box reachable only from the console. The generated id_ed25519
+# is an outbound/signing key and is deliberately NOT counted here.
+- name: Count authorized_keys before hardening SSH for {{ new_user_name }}
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep -c '^ssh-' {{ new_user_home }}/.ssh/authorized_keys 2>/dev/null || true
+  args:
+    executable: /bin/bash
+  register: authorized_key_count
+  changed_when: false
+  become: true
+  tags: [mmegger, new-user]
+
 - name: Disable SSH password authentication
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: '^PasswordAuthentication'
+    regexp: '^#?PasswordAuthentication'
     line: 'PasswordAuthentication no'
   become: true
   register: sshd_config_changed
+  when: (authorized_key_count.stdout | trim | int) > 0
+  tags: [mmegger, new-user]
+
+- name: Warn that SSH password auth was left enabled (no authorized_keys)
+  ansible.builtin.debug:
+    msg: >-
+      No authorized_keys found for {{ new_user_name }}. Leaving PasswordAuthentication
+      enabled to avoid a lockout. Add a key (root's authorized_keys or sshid.io/{{
+      new_user_sshid_user }}) and re-run --tags {{ 'mmegger' if new_user_name == 'mmegger' else 'new-user' }} to harden.
+  when: (authorized_key_count.stdout | trim | int) == 0
   tags: [mmegger, new-user]
 
 - name: Reload ssh after config change
