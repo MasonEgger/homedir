@@ -15,7 +15,7 @@ This repository contains my personal shell configurations, editor settings, and 
 $ cd
 $ git clone https://github.com/MasonEgger/homedir.git
 $ cd homedir
-$ ansible-playbook ansible/setup.yml    # Install everything for current user
+$ ansible-playbook ansible/setup.yml    # Install everything (except opt-in Obsidian) for current user
 ```
 
 **Fresh mmegger user install** (remote Debian/Ubuntu server):

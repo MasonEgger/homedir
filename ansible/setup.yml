@@ -36,9 +36,9 @@
       ansible.builtin.include_tasks: tasks/git-hooks.yml
       tags: git-hooks
 
-    - name: Include Obsidian tasks
+    - name: Include Obsidian tasks (opt-in; per-user interactive install)
       ansible.builtin.include_tasks: tasks/obsidian.yml
-      tags: obsidian
+      tags: [never, obsidian]
 
     - name: Include Tailscale tasks
       ansible.builtin.include_tasks: tasks/tailscale.yml
@@ -70,7 +70,7 @@
           - "Homedir directory installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'homedir' in ansible_run_tags else 'Skipped' }}"
           - "Vale configuration installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'vale' in ansible_run_tags else 'Skipped' }}"
           - "Git hooks installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'git-hooks' in ansible_run_tags else 'Skipped' }}"
-          - "Obsidian installed: {{ 'Yes' if ansible_run_tags == ['all'] or 'obsidian' in ansible_run_tags else 'Skipped' }}"
+          - "Obsidian installed: {{ 'Yes' if 'obsidian' in ansible_run_tags else 'Skipped' }}"
           - "Tailscale installed/updated: {{ 'Yes' if ansible_run_tags == ['all'] or 'tailscale' in ansible_run_tags else 'Skipped' }}"
           - "mmegger user setup (Debian): {{ 'Yes' if 'mmegger' in ansible_run_tags else 'Skipped' }}"
           - "New user setup (Debian): {{ new_user_name if 'new-user' in ansible_run_tags else 'Skipped' }}"

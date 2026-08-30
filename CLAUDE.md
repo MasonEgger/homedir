@@ -15,7 +15,7 @@ There are two main scenarios:
 **1. Sync dev environment** (current user, any machine):
 ```bash
 cd ~/homedir
-ansible-playbook ansible/setup.yml                     # Install everything for current user
+ansible-playbook ansible/setup.yml                     # Install everything (except opt-in Obsidian) for current user
 ```
 
 **2. Fresh mmegger user install** (remote Debian/Ubuntu server):
@@ -69,7 +69,7 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `vale` | `vale.yml` | Mixed | Vale binary (system) + vale-styles repo clone to `~/Code/vale-styles` + `.vale.ini` config (per-user) |
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
 | `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
-| `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services |
+| `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services. Opt-in (`[never, obsidian]`): a bare `setup.yml` run skips it; run `--tags obsidian` explicitly |
 | `new-user` | `user.yml` | Both | Parameterized user provisioning driven by `new_user_*` vars: creates user, SSH bootstrap + hardening, per-user configs. Hidden tag (`[never, new-user]`) |
 | `mmegger` | `mmegger.yml` | Both | System packages, then `user.yml` with `new_user_name: mmegger`, then Tailscale. Obsidian is deliberately excluded (self-service post-login). Hidden tag (`[never, mmegger]`) |
 
