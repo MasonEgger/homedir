@@ -105,11 +105,16 @@
   when: root_authorized_keys.stat.exists
   tags: [mmegger, new-user]
 
+# Accept: text/plain is required. sshid.io is a SPA behind CloudFront and
+# serves its HTML index to a default request; only an explicit text/plain
+# Accept returns the raw authorized_keys lines.
 - name: Fetch sshid.io keys for {{ new_user_sshid_user }}
   ansible.builtin.uri:
     url: "https://sshid.io/{{ new_user_sshid_user }}"
     return_content: true
     status_code: [200, 404]
+    headers:
+      Accept: text/plain
   register: sshid_keys
   become: true
   tags: [mmegger, new-user]

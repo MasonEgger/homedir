@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
 - `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 - After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
@@ -12,7 +13,6 @@
 - Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
 - Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
 - `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
-- Tasks inside an `include_tasks` file reached only via `tags: [never, X]` includes need their own `tags: X` (or `apply: tags`) to run under `--tags X`; to share one file between two entry points, tag every task with both, e.g. `[mmegger, new-user]` (2026-08-22)
 ## Categories
 
 ### Vale / Prose Linting
@@ -69,4 +69,5 @@
 - Verify server timezone (`timedatectl`) at start of time-sensitive setups; default cloud servers are usually UTC (2026-05-10)
 
 ### Debugging
+- sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
 - Use `obsidian eval code="..."` for runtime introspection of the Obsidian app — `app.plugins.plugins`, `app.commands.commands`, `localStorage` (2026-05-10)
