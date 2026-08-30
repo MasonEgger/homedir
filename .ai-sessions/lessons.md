@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- Obsidian's GitHub `releases/latest` is often mobile-only (APK, no AppImage); the reliable desktop version pointer is `desktop-releases.json`'s `latestVersion` (its `downloadUrl` is the .asar.gz, not the AppImage). And `ansible.builtin.git` defaults `recursive: yes` — cloning nvm pulls an SSH-only test submodule that fails on keyless boxes; set `recursive: false` (2026-08-30)
 - sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
 - `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 - After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
@@ -12,7 +13,6 @@
 - `su - USER -c CMD` with a zsh login shell is non-interactive and skips `.zshrc`, so `~/.local/bin` (uv, claude) is off PATH. Use `su - USER -s /bin/bash -c 'PATH=$HOME/.local/bin:$PATH CMD'`. And after `chage -d 0`, never verify with `su -`; it blocks on the password prompt. Use `runuser -u USER -- bash -lc` (2026-08-23)
 - Guarding a one-shot task on `register.changed` of an earlier task breaks when a run dies in between (the next run sees `changed: false` forever). Use a marker file in the target home instead (2026-08-23)
 - Before rebasing a months-old branch, diff its *capabilities* against `main`, not its files. `git merge-tree $(git merge-base A B) A B` shows conflicts without touching the tree; if only a couple of features are new, re-implement on a fresh branch and close the old PR (2026-08-22)
-- `ansible-lint name[template]` only allows Jinja at the END of a task name. Write `Create user {{ x }}`, not `Create {{ x }} user`. To lint only your new findings, stash, lint the baseline, pop, and compare (2026-08-22)
 ## Categories
 
 ### Vale / Prose Linting
@@ -57,6 +57,7 @@
 - `claude plugin update <name>@<marketplace>` no-op output: `✔ <name> is already at the latest version (X.Y.Z).` Parse the version with `\(([^()]*\d[^()]*)\)` — tolerates semver and commit SHAs. Several official plugins omit the version, so handle the empty case (2026-05-31)
 
 ### Obsidian
+- Obsidian's GitHub `releases/latest` is often mobile-only (APK, no AppImage); the reliable desktop version pointer is `desktop-releases.json`'s `latestVersion` (its `downloadUrl` is the .asar.gz, not the AppImage). And `ansible.builtin.git` defaults `recursive: yes` — cloning nvm pulls an SSH-only test submodule that fails on keyless boxes; set `recursive: false` (2026-08-30)
 - The CLI toggle in Settings → General is just `"cli": true` at the top of `~/.config/obsidian/obsidian.json` (2026-05-10)
 - Headless mode skips the "Trust author" prompt; plugins won't load until you call `app.plugins.setEnable(true)` once (2026-05-10)
 - `obsidian create … template=…` uses core Templates plugin only. For Templater, use `templater.create_new_note_from_template(...)` via `obsidian eval` (2026-05-10)
