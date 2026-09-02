@@ -15,7 +15,7 @@ There are two main scenarios:
 **1. Sync dev environment** (current user, any machine):
 ```bash
 cd ~/homedir
-ansible-playbook ansible/setup.yml                     # Install everything for current user
+ansible-playbook ansible/setup.yml                     # Install everything (except opt-in Obsidian) for current user
 ```
 
 **2. Fresh mmegger user install** (remote Debian/Ubuntu server):
@@ -24,6 +24,14 @@ ansible-playbook ansible/setup.yml --tags mmegger       # Full mmegger user setu
 ```
 
 The `mmegger` tag is self-contained: installs all system packages and tools, creates the user, sets up SSH with sshid.io keys, hardens SSH, then installs all per-user configs (Oh My Zsh, dotfiles, Claude CLI, uv, .claude directory, .homedir scripts, vale config, git hooks).
+
+**3. Fresh install for any other user** (remote Debian/Ubuntu server):
+```bash
+ansible-playbook ansible/setup.yml --tags new-user -e new_user_name=alice
+```
+
+`new-user` runs `tasks/user.yml` directly: user creation, SSH bootstrap and hardening, and all per-user configs, without the system package step.
+Override `new_user_shell`, `new_user_home`, `new_user_groups`, `new_user_password`, `new_user_email`, or `new_user_sshid_user` with `-e` as needed (defaults in `ansible/group_vars/all.yml`).
 
 **Modular Installation Options (sync scenario):**
 ```bash
@@ -61,25 +69,39 @@ ansible-playbook ansible/setup.yml --tags packages,dotfiles
 | `vale` | `vale.yml` | Mixed | Vale binary (system) + vale-styles repo clone to `~/Code/vale-styles` + `.vale.ini` config (per-user) |
 | `git-hooks` | `git-hooks.yml` | Per-user | Global git hooks directory |
 | `tailscale` | `tailscale.yml` | System | Tailscale VPN (brew on macOS, official script on Linux) |
-| `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services |
-| `mmegger` | `mmegger.yml` | Both | Full user provisioning — hidden tag (`[never, mmegger]`) |
+| `obsidian` | `obsidian.yml` | Per-user | Obsidian — Homebrew cask on macOS; on Ubuntu, headless AppImage + bundled `obsidian-cli` + nvm/Node + `obsidian-headless` (`ob`) + two systemd `--user` services. Opt-in (`[never, obsidian]`): a bare `setup.yml` run skips it; run `--tags obsidian` explicitly |
+| `new-user` | `user.yml` | Both | Parameterized user provisioning driven by `new_user_*` vars: creates user, SSH bootstrap + hardening, per-user configs. Hidden tag (`[never, new-user]`) |
+| `mmegger` | `mmegger.yml` | Both | System packages, then `user.yml` with `new_user_name: mmegger`, then Tailscale. Obsidian is deliberately excluded (self-service post-login). Hidden tag (`[never, mmegger]`) |
 
 ### Target User Pattern
 
 Task files support two modes via the `target_user` / `target_home` variables:
 
 - **Undefined** (sync scenario): runs as current user, no privilege escalation
-- **Defined** (mmegger scenario): `mmegger.yml` re-includes task files with `vars: { target_home: /home/mmegger, target_user: mmegger }`
+- **Defined** (mmegger / new-user scenario): `user.yml` re-includes task files with `vars: { target_home: "{{ new_user_home }}", target_user: "{{ new_user_name }}" }`
 
-Per-user shell tasks (user-tools.yml) use `su - {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. Each task has two variants: `(target user)` and `(current user)`.
+Both entry points reach `user.yml`'s tasks via `apply:` on the include (`mmegger.yml` and the `new-user` include in `setup.yml`), so a task added to `user.yml` runs under both tags even if you forget to tag it. The leaf `[mmegger, new-user]` tags on `user.yml`'s tasks are now redundant belt-and-suspenders, not load-bearing.
 
-### mmegger Provisioning Order
+Per-user shell tasks (user-tools.yml, claude.yml) use `runuser -l {{ target_user }}` instead of Ansible's `become_user` to avoid temp file permission errors on local connections. `runuser` rather than `su -` because su's PAM account check enforces the `chage -d 0` password expiry and would fail every re-run. Each task has two variants: `(target user)` and `(current user)`.
 
-The ordering in `mmegger.yml` matters:
-1. **System packages** (packages, vale binary, tailscale) — no user needed
-2. **User creation** (ensure zsh, create user, force password change)
-3. **SSH setup** (authorized_keys, sshid.io keys, key generation, SSH hardening)
-4. **Per-user configs** (user-tools, dotfiles, claude, homedir, git-hooks)
+### Provisioning Order
+
+The account is created as early as the package dependency allows, so a failure in any
+later network task (Tailscale, or a self-service Obsidian run) never leaves a box without
+a usable, reachable `mmegger` account. `mmegger.yml` order:
+
+1. **System packages** (`packages.yml`, root): must run first because `user-tools.yml` needs `git`/`curl` from apt.
+2. **User account + configs** (`user.yml`): create user, SSH bootstrap + hardening, then all per-user configs.
+3. **Tailscale** (`tailscale.yml`, root): a `curl | sh` network install, ordered AFTER the account so a failure cannot block user creation.
+
+Within `user.yml` the ordering also matters:
+1. **User creation** (ensure zsh, ensure docker group, create user with temp password)
+2. **SSH setup** (root authorized_keys, sshid.io keys, key generation)
+3. **SSH hardening** (disable password auth). Guarded: skipped with a warning unless the account has at least one `authorized_keys` entry, so a keyless run cannot lock you out.
+4. **Per-user configs** (user-tools, vale, dotfiles, homedir, claude, git-hooks). homedir must precede claude: the target-user plugin install runs `~/.homedir/claude-plugins`
+5. **Wrap-up** (force password change on first login, print the generated public key)
+
+Obsidian is NOT in the `mmegger` flow. `obsidian.yml` is per-user, `systemctl --user`, and two-pass interactive, so it only installs correctly when run AS the logged-in user. After first login: `ssh mmegger@host`, then `cd ~/homedir && ansible-playbook ansible/setup.yml --tags obsidian`.
 
 Variables in `ansible/group_vars/all.yml` define package lists and defaults.
 
@@ -93,7 +115,7 @@ Unlike other tasks, `obsidian.yml` on Ubuntu has interactive sub-steps (Obsidian
 
 The systemd units run with Electron's built-in `--ozone-platform=headless` flag — no Xvfb needed. Templates live in `ansible/templates/obsidian-headless.service.j2`, `ob-sync.service.j2`, `ob-sync-wrapper.sh.j2`, `obsidian.json.j2`.
 
-**Linux task assumes target user.** `obsidian.yml` uses `ansible_user_dir` and `systemctl --user`, so it runs only as the target user. The `mmegger` flow can include it but doesn't currently pass `target_home` — if you ever need root-bootstrapped headless Obsidian, both `mmegger.yml`'s include and `obsidian.yml`'s path references need adjusting.
+**Linux task assumes target user.** `obsidian.yml` uses `ansible_user_dir` and `systemctl --user`, so it only installs correctly as the logged-in user. This is why it is excluded from the `mmegger` flow (which runs as root and would install to `/root`): run `--tags obsidian` yourself after logging in as the target user.
 
 ## Key Commands and Aliases
 
@@ -165,5 +187,5 @@ ansible-playbook ansible/setup.yml  # Re-run to update files
 ### Adding a New Ansible Task
 1. Create a new task file in `ansible/tasks/`
 2. Add an `include_tasks` entry in `setup.yml` with a tag
-3. If it should run during mmegger provisioning, add an include in `mmegger.yml` at the appropriate point in the ordering (system vs. per-user)
+3. If it should run during user provisioning, add an include in `mmegger.yml` (system-level, before or after `user.yml` per whether it must gate account creation) or `user.yml` (per-user); `apply:` on the parent include propagates the tag, so inner tasks need no per-task tags
 4. Update the installation summary in `setup.yml`

@@ -53,12 +53,17 @@
   when: ansible_facts['os_family'] == "Debian"
   tags: obsidian
 
-# --- 3. Resolve latest Obsidian version ---
-- name: Get latest Obsidian release info from GitHub (Ubuntu/Debian)
+# --- 3. Resolve latest Obsidian DESKTOP version ---
+# desktop-releases.json is the canonical desktop pointer. The GitHub
+# `releases/latest` endpoint is wrong here: Obsidian's latest GitHub release is
+# often a mobile-only build (APK, no AppImage), so deriving the version from it
+# yields a 404 on the AppImage download. desktop-releases.json.latestVersion
+# always names a release that carries the Linux AppImages.
+- name: Get canonical Obsidian desktop version (Ubuntu/Debian)
   ansible.builtin.uri:
-    url: https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest
+    url: https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/desktop-releases.json
     return_content: true
-  register: obsidian_release
+  register: obsidian_desktop_releases
   when:
     - ansible_facts['os_family'] == "Debian"
     - not ansible_check_mode
@@ -66,10 +71,10 @@
 
 - name: Set Obsidian version fact
   ansible.builtin.set_fact:
-    obsidian_version: "{{ obsidian_release.json.tag_name | regex_replace('^v', '') }}"
+    obsidian_version: "{{ (obsidian_desktop_releases.content | from_json).latestVersion }}"
   when:
     - ansible_facts['os_family'] == "Debian"
-    - obsidian_release.json is defined
+    - obsidian_desktop_releases.content is defined
   tags: obsidian
 
 # --- 4. Download AppImage ---
@@ -117,12 +122,16 @@
   when: ansible_facts['os_family'] == "Debian"
   tags: obsidian
 
+# recursive: false — nvm registers a test-fixture submodule over an SSH URL
+# (git@github.com:nvm-sh/nvmrc.git) that fails host-key/publickey on a fresh
+# box. nvm needs none of its test submodules to run.
 - name: Clone nvm into ~/.nvm (Ubuntu/Debian)
   ansible.builtin.git:
     repo: https://github.com/nvm-sh/nvm.git
     dest: "{{ ansible_facts['user_dir'] }}/.nvm"
     version: v0.40.1
     depth: 1
+    recursive: false
   when:
     - ansible_facts['os_family'] == "Debian"
     - not (nvm_check.stat.exists | default(false))

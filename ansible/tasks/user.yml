@@ -1,0 +1,307 @@
+---
+# ABOUTME: Parameterized Linux user provisioning on Debian/Ubuntu systems.
+# Creates the user named by new_user_name, bootstraps SSH, hardens sshd, then
+# re-uses the per-user task files targeting the new home directory.
+#
+# Required: new_user_name
+# Optional (defaults in group_vars/all.yml): new_user_shell, new_user_home,
+#   new_user_groups, new_user_password, new_user_email, new_user_sshid_user
+#
+# Included with apply.tags from mmegger.yml (tag: mmegger) and setup.yml
+# (tag: new-user). Every task carries both tags so either entry point works.
+
+# =============================================================================
+# Preconditions
+# =============================================================================
+
+- name: Require new_user_name
+  ansible.builtin.assert:
+    that:
+      - new_user_name is defined
+      - new_user_name | length > 0
+    fail_msg: "new_user_name is required (pass -e new_user_name=NAME)"
+  tags: [mmegger, new-user]
+
+- name: Verify platform is Debian/Ubuntu for user creation
+  ansible.builtin.fail:
+    msg: "User creation is only supported on Debian/Ubuntu."
+  when: ansible_facts['os_family'] != "Debian"
+  tags: [mmegger, new-user]
+
+# =============================================================================
+# User creation (must happen before any task that runs as the new user)
+# =============================================================================
+
+- name: Ensure zsh is installed before creating user
+  ansible.builtin.apt:
+    name: zsh
+    state: present
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+  become: true
+  when: "'docker' in new_user_groups"
+  tags: [mmegger, new-user]
+
+- name: Create user {{ new_user_name }}
+  ansible.builtin.user:
+    name: "{{ new_user_name }}"
+    shell: "{{ new_user_shell }}"
+    home: "{{ new_user_home }}"
+    groups: "{{ new_user_groups }}"
+    append: true
+    create_home: true
+    password: "{{ new_user_password | password_hash('sha512') }}"
+    update_password: on_create
+  become: true
+  register: new_user_result
+  tags: [mmegger, new-user]
+
+- name: Ensure home directory is owned by {{ new_user_name }}
+  ansible.builtin.file:
+    path: "{{ new_user_home }}"
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: '0750'
+    state: directory
+  become: true
+  tags: [mmegger, new-user]
+
+# =============================================================================
+# SSH setup and hardening
+# =============================================================================
+
+- name: Create .ssh directory for {{ new_user_name }}
+  ansible.builtin.file:
+    path: "{{ new_user_home }}/.ssh"
+    state: directory
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: '0700'
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Check for root authorized_keys
+  ansible.builtin.stat:
+    path: /root/.ssh/authorized_keys
+  register: root_authorized_keys
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Copy root authorized_keys to {{ new_user_name }}
+  ansible.builtin.copy:
+    src: /root/.ssh/authorized_keys
+    dest: "{{ new_user_home }}/.ssh/authorized_keys"
+    remote_src: true
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: '0600'
+    force: false
+  become: true
+  when: root_authorized_keys.stat.exists
+  tags: [mmegger, new-user]
+
+# Accept: text/plain is required. sshid.io is a SPA behind CloudFront and
+# serves its HTML index to a default request; only an explicit text/plain
+# Accept returns the raw authorized_keys lines.
+- name: Fetch sshid.io keys for {{ new_user_sshid_user }}
+  ansible.builtin.uri:
+    url: "https://sshid.io/{{ new_user_sshid_user }}"
+    return_content: true
+    status_code: [200, 404]
+    headers:
+      Accept: text/plain
+  register: sshid_keys
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Add sshid.io keys for {{ new_user_name }}
+  ansible.posix.authorized_key:
+    user: "{{ new_user_name }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ (sshid_keys.content | default('')).splitlines() | select('match', '^ssh-') | list if sshid_keys.status == 200 else [] }}"
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Check if SSH key exists for {{ new_user_name }}
+  ansible.builtin.stat:
+    path: "{{ new_user_home }}/.ssh/id_ed25519"
+  register: new_user_ssh_key
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Generate SSH key for {{ new_user_name }}
+  ansible.builtin.command:
+    cmd: ssh-keygen -t ed25519 -C "{{ new_user_email }}" -f {{ new_user_home }}/.ssh/id_ed25519 -N ""
+  become: true
+  become_user: "{{ new_user_name }}"
+  when: not new_user_ssh_key.stat.exists
+  changed_when: true
+  tags: [mmegger, new-user]
+
+# Lockout guard: never disable password auth unless the account has at least
+# one usable public key. Both key sources are best-effort (root's key is copied
+# only if it exists; sshid.io keys only on HTTP 200), so with neither, hardening
+# would leave the box reachable only from the console. The generated id_ed25519
+# is an outbound/signing key and is deliberately NOT counted here.
+- name: Count authorized_keys before hardening SSH for {{ new_user_name }}
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep -c '^ssh-' {{ new_user_home }}/.ssh/authorized_keys 2>/dev/null || true
+  args:
+    executable: /bin/bash
+  register: authorized_key_count
+  changed_when: false
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  become: true
+  register: sshd_config_changed
+  when: (authorized_key_count.stdout | trim | int) > 0
+  tags: [mmegger, new-user]
+
+- name: Warn that SSH password auth was left enabled (no authorized_keys)
+  ansible.builtin.debug:
+    msg: >-
+      No authorized_keys found for {{ new_user_name }}. Leaving PasswordAuthentication
+      enabled to avoid a lockout. Add a key (root's authorized_keys or sshid.io/{{
+      new_user_sshid_user }}) and re-run --tags {{ 'mmegger' if new_user_name == 'mmegger' else 'new-user' }} to harden.
+  when: (authorized_key_count.stdout | trim | int) == 0
+  tags: [mmegger, new-user]
+
+- name: Reload ssh after config change
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
+  become: true
+  when: sshd_config_changed.changed | default(false)
+  tags: [mmegger, new-user]
+
+# =============================================================================
+# Per-user configs (re-use existing task files as the new user)
+# =============================================================================
+
+- name: Include user tool installs (Oh My Zsh, Claude CLI, uv) for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: user-tools.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+- name: Include Vale tasks (binary + per-user config) for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: vale.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+- name: Include dotfiles tasks for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: dotfiles.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+# .homedir must land before .claude: the target-user plugin install runs
+# ~/.homedir/claude-plugins.
+- name: Include .homedir directory tasks for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: homedir.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+- name: Include .claude directory tasks for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: claude.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+- name: Include git hooks tasks for {{ new_user_name }}
+  ansible.builtin.include_tasks:
+    file: git-hooks.yml
+    apply:
+      tags: [mmegger, new-user]
+  vars:
+    target_home: "{{ new_user_home }}"
+    target_user: "{{ new_user_name }}"
+  tags: [mmegger, new-user]
+
+# =============================================================================
+# Wrap-up
+# =============================================================================
+
+# Marker file rather than new_user_result.changed: a run that dies after the
+# user exists but before this point would otherwise never force the change.
+- name: Check for the provisioned marker of {{ new_user_name }}
+  ansible.builtin.stat:
+    path: "{{ new_user_home }}/.ansible-user-provisioned"
+  register: new_user_provisioned
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Force password change on next login
+  ansible.builtin.command: chage -d 0 {{ new_user_name }}
+  become: true
+  when: not new_user_provisioned.stat.exists
+  changed_when: true
+  tags: [mmegger, new-user]
+
+- name: Write the provisioned marker for {{ new_user_name }}
+  ansible.builtin.copy:
+    content: "Written by ansible/tasks/user.yml. Delete to re-force a password change on the next run.\n"
+    dest: "{{ new_user_home }}/.ansible-user-provisioned"
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: '0644'
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Read SSH public key for {{ new_user_name }}
+  ansible.builtin.slurp:
+    src: "{{ new_user_home }}/.ssh/id_ed25519.pub"
+  register: new_user_ssh_pubkey
+  become: true
+  tags: [mmegger, new-user]
+
+- name: Display SSH public key for {{ new_user_name }}
+  ansible.builtin.debug:
+    msg:
+      - "============================================"
+      - "User {{ new_user_name }} created. Temporary password: {{ new_user_password }}"
+      - "The password must be changed on first login."
+      - ""
+      - "SSH public key for {{ new_user_name }}:"
+      - "{{ new_user_ssh_pubkey.content | b64decode | trim }}"
+      - ""
+      - "Add this key to GitHub:"
+      - "  1. https://github.com/settings/keys (Authentication)"
+      - "  2. https://github.com/settings/ssh/new (Signing)"
+      - "============================================"
+  tags: [mmegger, new-user]

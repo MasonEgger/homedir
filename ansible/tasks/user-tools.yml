@@ -3,15 +3,17 @@
 # Installs Oh My Zsh, Claude Code CLI, uv, Node (via nvm), the Todoist CLI, and
 # pnpm into the target user's home directory. Node comes from nvm, not apt.
 
+# Target-user variants run via `runuser -l`, not `su -`: su's PAM account
+# stack enforces the password expiry that user.yml sets with chage -d 0, so
+# every su would fail on a re-run until the user logs in. runuser skips it.
 # Oh My Zsh
 - name: Install Oh My Zsh (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/sh -c
+    runuser -l {{ target_user }} -s /bin/sh -c
     'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
   args:
     creates: "{{ target_home }}/.oh-my-zsh"
   become: true
-  changed_when: true
   when: target_user is defined and not ansible_check_mode
   tags: user-tools
 
@@ -20,21 +22,21 @@
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   args:
     creates: "{{ target_home }}/.oh-my-zsh"
-  changed_when: true
   when: target_user is not defined and not ansible_check_mode
   tags: user-tools
 
 # Claude Code CLI
-# No versioned installer URL available — always installs latest
+# No versioned installer URL available, so this always installs latest.
+# The installer symlinks ~/.local/bin/claude to the versioned binary.
 - name: Check if Claude Code CLI is installed
   ansible.builtin.stat:
-    path: "{{ target_home }}/.claude/local/bin/claude"
+    path: "{{ target_home }}/.local/bin/claude"
   register: claude_cli_check
   tags: user-tools
 
 - name: Install Claude Code CLI (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
+    runuser -l {{ target_user }} -s /bin/bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
   become: true
   changed_when: true
   when: target_user is defined and not claude_cli_check.stat.exists and not ansible_check_mode
@@ -55,7 +57,7 @@
 
 - name: Install uv Python package manager (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+    runuser -l {{ target_user }} -s /bin/bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
   become: true
   changed_when: true
   when: target_user is defined and not uv_check.stat.exists and not ansible_check_mode
@@ -74,13 +76,14 @@
 # needs no sudo and no prefix override.
 - name: Ensure nvm + Node LTS (target user, Ubuntu/Debian)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c '
+    runuser -l {{ target_user }} -s /bin/bash -c '
     export NVM_DIR="$HOME/.nvm";
-    if [ ! -s "$NVM_DIR/nvm.sh" ]; then git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR"; fi;
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR" && echo NVM_CHANGED; fi;
     . "$NVM_DIR/nvm.sh";
-    if ! nvm which --lts >/dev/null 2>&1; then nvm install --lts && nvm alias default "lts/*"; fi'
+    if ! nvm which "lts/*" >/dev/null 2>&1; then nvm install --lts && nvm alias default "lts/*" && echo NVM_CHANGED; fi'
   become: true
-  changed_when: true
+  register: nvm_target_result
+  changed_when: "'NVM_CHANGED' in nvm_target_result.stdout"
   when: target_user is defined and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
   tags: user-tools
 
@@ -88,16 +91,16 @@
   ansible.builtin.shell: |
     export NVM_DIR="$HOME/.nvm"
     if [ ! -s "$NVM_DIR/nvm.sh" ]; then
-      git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR"
+      git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm.git "$NVM_DIR" && echo NVM_CHANGED
     fi
     . "$NVM_DIR/nvm.sh"
-    if ! nvm which --lts >/dev/null 2>&1; then
-      nvm install --lts
-      nvm alias default 'lts/*'
+    if ! nvm which "lts/*" >/dev/null 2>&1; then
+      nvm install --lts && nvm alias default 'lts/*' && echo NVM_CHANGED
     fi
   args:
     executable: /bin/bash
-  changed_when: true
+  register: nvm_current_result
+  changed_when: "'NVM_CHANGED' in nvm_current_result.stdout"
   when: target_user is not defined and ansible_facts['os_family'] == "Debian" and not ansible_check_mode
   tags: user-tools
 
@@ -110,10 +113,13 @@
     marker: "# {mark} ANSIBLE MANAGED nvm"
     create: true
     mode: "0644"
+    owner: "{{ target_user | default(omit) }}"
+    group: "{{ target_user | default(omit) }}"
     block: |
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
       [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  become: "{{ target_user is defined }}"
   when: ansible_facts['os_family'] == "Debian"
   tags: user-tools
 
@@ -121,9 +127,11 @@
 # Guard on the npm package, not `command -v td`: `td` collides with the
 # `td=tmux detach` shell alias, so a name check can false-positive and skip
 # the install. Querying npm's global list checks the actual package.
+# The checks below run as the Ansible user (root in the target-user flow), so
+# NVM_DIR must point at target_home explicitly rather than $HOME.
 - name: Check if Todoist CLI is installed
   ansible.builtin.shell: |
-    export NVM_DIR="$HOME/.nvm"
+    export NVM_DIR="{{ target_home }}/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null 2>&1
     npm ls -g --depth=0 @doist/todoist-cli
   args:
@@ -135,7 +143,7 @@
 
 - name: Install Todoist CLI (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c '
+    runuser -l {{ target_user }} -s /bin/bash -c '
     export NVM_DIR="$HOME/.nvm";
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null;
     npm install -g @doist/todoist-cli'
@@ -159,7 +167,7 @@
 # Required by the slidev Claude Code skill and any other pnpm-based workflows
 - name: Check if pnpm is installed
   ansible.builtin.shell: |
-    export NVM_DIR="$HOME/.nvm"
+    export NVM_DIR="{{ target_home }}/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null 2>&1
     command -v pnpm
   args:
@@ -171,7 +179,7 @@
 
 - name: Enable pnpm via corepack (target user)
   ansible.builtin.shell: >-
-    su - {{ target_user }} -s /bin/bash -c '
+    runuser -l {{ target_user }} -s /bin/bash -c '
     export NVM_DIR="$HOME/.nvm";
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use --lts >/dev/null;
     corepack enable pnpm && corepack prepare pnpm@latest --activate'

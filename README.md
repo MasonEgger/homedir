@@ -15,7 +15,7 @@ This repository contains my personal shell configurations, editor settings, and 
 $ cd
 $ git clone https://github.com/MasonEgger/homedir.git
 $ cd homedir
-$ ansible-playbook ansible/setup.yml    # Install everything for current user
+$ ansible-playbook ansible/setup.yml    # Install everything (except opt-in Obsidian) for current user
 ```
 
 **Fresh mmegger user install** (remote Debian/Ubuntu server):
@@ -23,7 +23,15 @@ $ ansible-playbook ansible/setup.yml    # Install everything for current user
 ansible-playbook ansible/setup.yml --tags mmegger    # Full mmegger user setup
 ```
 
-The `mmegger` tag is self-contained: creates the user, hardens SSH, and then installs all packages, dotfiles, and tools for the mmegger user.
+The `mmegger` tag is self-contained: installs system packages, creates the user, hardens SSH (only once a key is present, so it can't lock you out), installs all dotfiles and tools for the mmegger user, then installs Tailscale. Obsidian is excluded (it's a per-user, interactive install); run `--tags obsidian` yourself after first login.
+
+**Fresh install for any other user** (remote Debian/Ubuntu server):
+```bash
+ansible-playbook ansible/setup.yml --tags new-user -e new_user_name=alice
+```
+
+Creates the user (zsh shell, `sudo` and `docker` groups, temporary password `changeme123` that must be changed at first login), copies root's `authorized_keys`, pulls keys from `sshid.io/<name>`, generates an ed25519 key, disables SSH password auth, and installs the per-user dotfiles and tools.
+Override `new_user_shell`, `new_user_home`, `new_user_groups`, `new_user_password`, `new_user_email`, or `new_user_sshid_user` with `-e`.
 
 **Modular Installation Options (sync scenario):**
 ```bash
@@ -164,7 +172,8 @@ Claude Code plugins (BPE workflow, writing toolkit, productivity commands) live 
 │   │   ├── vale.yml              # Vale prose linter
 │   │   ├── git-hooks.yml         # Global git hooks
 │   │   ├── tailscale.yml         # Tailscale VPN
-│   │   └── mmegger.yml           # Full user provisioning
+│   │   ├── mmegger.yml           # Packages + user.yml with mmegger values
+│   │   └── user.yml              # Parameterized user provisioning (new-user tag)
 │   ├── ansible.cfg               # Ansible configuration
 │   ├── hosts                     # Localhost inventory
 │   └── requirements.yml          # External role dependencies

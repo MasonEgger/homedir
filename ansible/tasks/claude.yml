@@ -152,14 +152,27 @@
   become: "{{ target_user is defined }}"
   tags: claude
 
+# runuser, not su: su enforces the chage -d 0 password expiry and fails on
+# re-runs. Login shell via bash, not the user's zsh: a non-interactive zsh login shell
+# skips .zshrc, so ~/.local/bin (uv, claude) would be missing from PATH.
+# changed_when keys on the script's own report lines: ": installed",
+# ": updated", ": uninstalled", ": removed" mark real changes, while
+# "up to date" and "refreshed from source" are no-ops.
 - name: Install Claude Code plugins (target user)
-  ansible.builtin.shell: |
-    su - {{ target_user }} -c "{{ target_home }}/.homedir/claude-plugins"
+  ansible.builtin.shell: >-
+    runuser -l {{ target_user }} -s /bin/bash -c
+    'PATH="$HOME/.local/bin:$PATH" {{ target_home }}/.homedir/claude-plugins'
   when: target_user is defined
   become: true
+  register: claude_plugins_target
+  changed_when: >-
+    claude_plugins_target.stdout is search(': (installed|updated|uninstalled|removed)')
   tags: claude
 
 - name: Install Claude Code plugins (current user)
   ansible.builtin.command: "{{ dotfiles_dir }}/.homedir/claude-plugins"
   when: target_user is not defined
+  register: claude_plugins_current
+  changed_when: >-
+    claude_plugins_current.stdout is search(': (installed|updated|uninstalled|removed)')
   tags: claude
