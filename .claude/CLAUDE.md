@@ -1,42 +1,17 @@
 # Development Guidelines for Claude
 
 Always-on rules live here. Task-specific rules live in `.claude/rules/` and load
-conditionally via `paths:` frontmatter (currently: code-style, python, writing-style).
+conditionally via `paths:` frontmatter (currently: code-style, python).
 
 ## Writing Voice
 
 These rules apply to ALL output: chat replies, files I write or edit, code
 comments, commit messages, PR bodies, GitHub issue text, anything bearing my
-name. The full anti-AI-tells taxonomy (with examples and human alternatives)
-lives in `~/.claude/rules/writing-style.md` and auto-loads on prose paths.
+name. The full anti-AI-tells taxonomy (current-era vs. earlier-era tells,
+syntax patterns, structural tells, tone tells, human alternatives) lives in
+the content-design plugin's `references/ai-tells.md` file.
 
-### Hard prohibitions (universal)
-
-- **No em-dashes (—) or en-dashes (–) anywhere.** Substitute with periods,
-  commas, parentheses, colons, or semicolons. Hyphens (-) are fine for compound
-  words and ranges. Scrub before sending; this includes drafts, copy intended
-  for paste, and anything inside `gh issue create --body` or similar.
-- **No "not just X, it's Y" or "not only X, but Y" parallelism.** Just state it.
-- **No "let's dive in", "let's explore", "in conclusion", "to summarize",
-  "it's worth noting", "as of my last update", or "I welcome feedback"
-  preambles or sign-offs.** Start with the content. End with the content.
-- **No promotional or press-release voice.** Write plainly.
-- **No vague attribution.** Name a source or drop the claim. No "researchers
-  say", "experts believe", "many developers prefer".
-
-### Banned vocabulary (the short list)
-
-Avoid as overused AI tells: `delve`, `delving`, `dive into`, `tapestry`,
-`vibrant`, `seamless`, `seamlessly`, `comprehensive`, `robust`, `leverage`,
-`unlock`, `unleash`, `realm`, `holistic`, `transformative`, `showcase`,
-`showcasing`, `fostering`, `boasts` (as "has"), `bolstered`, `crucial`,
-`pivotal`, `landscape` (abstract), `meticulous`, `meticulously`, `testament`,
-`underscore` (verb), `intricate`, `interplay`, `enduring`.
-
-For the full taxonomy (current-era vs. earlier-era tells, syntax patterns,
-structural tells like bullet+colon canned lists, smart quotes, tone tells like
-the "despite challenges, the future is bright" template), read
-`~/.claude/rules/writing-style.md` when it auto-loads.
+@writing-hard-rules.md
 
 ## Our Relationship
 
@@ -78,9 +53,12 @@ GitHub commit messages, PR descriptions, issue bodies, or any other prose output
 
 ### Line breaks
 
-**One sentence per line in committed Markdown prose**, blank line between paragraphs; reasoning and edge cases in `~/.claude/rules/writing-style.md` §9.
+**One sentence per line in committed Markdown prose**, blank line between paragraphs.
+This keeps diffs and reviews clean: a reworded sentence becomes a one-line change instead of a reflowed paragraph.
+Does not apply to terminal chat replies, where one-per-line reads oddly and nothing is being diffed.
 
 ### Diagrams
 
 **Mermaid** in files and anything GitHub renders; **ASCII box-drawing** in terminal chat, where Mermaid shows up as unparsed source.
-Details and the fence syntax are in `~/.claude/rules/writing-style.md` §10.
+Wrap Mermaid in a fenced code block with the `mermaid` language tag.
+Never paste a Mermaid code block into chat expecting it to render; the terminal has no Mermaid renderer.

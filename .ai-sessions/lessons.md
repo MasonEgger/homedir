@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- `scripts/prose-scrub.py`'s dash and curly-quote codepoint rules have no escape mechanism, not even inside backticks or fenced code blocks (`applies_in_code_fences=True`). A rule's own documentation cannot show the banned glyph as a literal example; name the character by word only ("em-dash", not the glyph itself) (2026-09-15)
 - Provisioning order: create the user account + SSH as early as dependencies allow, and run flaky network installs (tailscale `curl|sh`, obsidian) AFTER, so their failure can't leave a box with no login. `curl|sh` daemons are order-independent from user creation; put them last (2026-08-30)
 - `systemctl --user` / `loginctl enable-linger` only work cleanly when run AS the logged-in user; automating them for a not-yet-logged-in account via become is fragile (needs linger-first + XDG_RUNTIME_DIR everywhere). For per-user interactive services (obsidian headless), make it a self-service post-login step, not part of root provisioning (2026-08-30)
 - Never disable `PasswordAuthentication` without asserting the account has >=1 authorized_key; best-effort key sources (root copy, sshid.io) can both miss and lock you out. Gate the hardening on a `grep -c '^ssh-' authorized_keys` count (2026-08-30)
@@ -12,10 +13,10 @@
 - After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
 - Ansible `creates:` skips the command but `changed_when: true` still reports changed. Drop the override and let `creates` decide, or print a marker to stdout and key `changed_when` on it (2026-08-23)
-- Test Ansible provisioning on a throwaway droplet immediately, not after `--check`: `doctl compute droplet create NAME --image ubuntu-24-04-x64 --size s-2vcpu-2gb --region nyc3 --ssh-keys ID --wait`, then clone the branch there and run. Snap `doctl` cannot read `~/.ssh`, so copy the pubkey to `~/key.pub` for `ssh-key import` (2026-08-23)
 ## Categories
 
 ### Vale / Prose Linting
+- `scripts/prose-scrub.py`'s dash and curly-quote codepoint rules have no escape mechanism, not even inside backticks or fenced code blocks (`applies_in_code_fences=True`). A rule's own documentation cannot show the banned glyph as a literal example; name the character by word only ("em-dash", not the glyph itself) (2026-09-15)
 - Vale `existence` rules: `raw:` is a single concatenated regex; for multiple distinct patterns use `tokens:` instead. Multi-item `raw:` lists silently fail to load (no parse error, just no fires) (2026-06-16)
 - For Unicode character regex in Vale (em-dashes, smart quotes), use explicit Go code points like `\x{2014}` and `[\x{2018}\x{2019}...]` instead of literal characters. Literal curly quotes are editor-rendering-ambiguous (U+2018 vs U+201B look identical) (2026-06-16)
 - When adding a Vale rule family to MasonBase, also add `tests/fixtures/<family>-{bad,good}.md` plus matching assertions in `tests/run.sh`. The fixture system IS the eval harness; bare smoke-testing misses too-tight regexes that catch the obvious cases but miss realistic-bad ones (2026-06-16)
