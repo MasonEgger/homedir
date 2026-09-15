@@ -17,11 +17,11 @@
 # as of the std-rebuild branch and never vendored, so nothing ships it for
 # you, and syncing from the vale-styles repo does not populate this separate
 # StylesPath.
-# MasonTechnical.SentenceLength ships with vale-styles' std-rebuild PR; on a
-# main checkout the rule does not exist yet, so Vale silently ignores the
-# [max] = 25 line below until the PR merges. The other seven rules above
-# already exist hand-rolled on main and run on their own defaults until the
-# merge converts them to Std extends children.
+# All eight rules above already exist hand-rolled on vale-styles main and
+# run on their own defaults; the std-rebuild PR converts them to Std extends
+# children. The MasonTechnical.SentenceLength[max] = 25 line below is
+# honored either way (verified on Vale 3.21 against a main checkout); it
+# makes the per-type cap explicit rather than inherited.
 
 StylesPath = {{ target_home }}/Code/MasonEgger/vale-styles/styles
 Packages = Std
