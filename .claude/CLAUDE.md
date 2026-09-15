@@ -45,20 +45,3 @@ Follow this exact sequence for every commit:
 4. Run `/init` to update the project CLAUDE.md with any structural changes.
 
 `commit-msg.md` must be gitignored. Never stage it; if it's not in `.gitignore`, add it.
-
-## Markdown Writing
-
-These rules apply whenever writing any Markdown content: documentation, README files,
-GitHub commit messages, PR descriptions, issue bodies, or any other prose output.
-
-### Line breaks
-
-**One sentence per line in committed Markdown prose**, blank line between paragraphs.
-This keeps diffs and reviews clean: a reworded sentence becomes a one-line change instead of a reflowed paragraph.
-Does not apply to terminal chat replies, where one-per-line reads oddly and nothing is being diffed.
-
-### Diagrams
-
-**Mermaid** in files and anything GitHub renders; **ASCII box-drawing** in terminal chat, where Mermaid shows up as unparsed source.
-Wrap Mermaid in a fenced code block with the `mermaid` language tag.
-Never paste a Mermaid code block into chat expecting it to render; the terminal has no Mermaid renderer.

@@ -5,8 +5,8 @@ Rules for any prose output: chat replies, files written or edited, code comments
 - No em-dash or en-dash characters anywhere.
   Use periods, commas, parentheses, colons, or semicolons instead.
   Hyphens are fine for compound words and ranges.
-- No banned AI-tell vocabulary (a linter enforces the exact list).
-  When unsure, prefer a plain, concrete word over an abstract or inflated one.
+- No banned AI-tell vocabulary: delve, dive into, tapestry, vibrant, seamless, comprehensive, robust, leverage, unlock, unleash, realm, holistic, transformative, showcase, fostering, boasts, bolstered, crucial, pivotal, landscape, meticulous, testament, underscore, intricate, interplay, enduring.
+  When unsure, prefer a plain, concrete word over an abstract or inflated one (a linter enforces this exact list).
 - Straight quotes only in source files; never curly quotes or typographic primes.
 - No "not just X, it's Y" or "not only X, but Y" parallelism.
   State what the thing is.
@@ -22,5 +22,5 @@ Rules for any prose output: chat replies, files written or edited, code comments
 - One sentence per line in committed Markdown prose, with a blank line between paragraphs.
   Does not apply to terminal chat replies.
 - Mermaid diagrams in files and anywhere a Markdown renderer displays them; ASCII box-drawing diagrams in terminal chat output, where Mermaid shows up as unparsed source.
-- Write like a person: mix short and long sentences, use specific names and numbers instead of abstractions, prefer plain copulas ("is," "are," "was") over substitutes ("serves as," "represents"), allow sentence fragments, and repeat a word rather than reach for a synonym to dodge repetition.
+- Write like a person: mix short and long sentences, use specific names and numbers instead of abstractions, favor voice over polish, prefer plain copulas ("is," "are," "was") over substitutes ("serves as," "represents"), allow sentence fragments, and repeat a word rather than reach for a synonym to dodge repetition.
 - State a stylistic preference as a preference, not as a universal fact.

@@ -12,10 +12,13 @@
 # Packages = Std pulls in Vale's published Std library. Several MasonBase/
 # MasonTechnical rules are rule-to-rule `extends:` children of a Std rule
 # (FirstPerson, FirstUse, Latin, OxfordComma, Passive, Spaces, We, plus
-# MasonTechnical.SentenceLength). StylesPath below is the same directory the
-# vale-styles repo itself syncs into, so running `vale sync` from that repo
-# keeps Std current here too; no separate sync step is needed for this
-# rendered global config.
+# MasonTechnical.SentenceLength). Run `vale sync` once against this rendered
+# config so Std actually lands on StylesPath below: styles/Std/ is gitignored
+# in vale-styles and never vendored, so nothing ships it for you, and syncing
+# from the vale-styles repo does not populate this separate StylesPath.
+# MasonTechnical.SentenceLength only exists as a Std extends child once
+# vale-styles' std-rebuild PR merges to main; until then it runs on its own
+# default, same as the other seven extends children above.
 
 StylesPath = {{ target_home }}/Code/MasonEgger/vale-styles/styles
 Packages = Std
