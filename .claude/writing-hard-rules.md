@@ -6,7 +6,7 @@ Rules for any prose output: chat replies, files written or edited, code comments
   Use periods, commas, parentheses, colons, or semicolons instead.
   Hyphens are fine for compound words and ranges.
 - No banned AI-tell vocabulary: delve, dive into, tapestry, vibrant, seamless, comprehensive, robust, leverage, unlock, unleash, realm, holistic, transformative, showcase, fostering, boasts, bolstered, crucial, pivotal, landscape, meticulous, testament, underscore, intricate, interplay, enduring.
-  When unsure, prefer a plain, concrete word over an abstract or inflated one (a linter enforces this exact list).
+  When unsure, prefer a plain, concrete word over an abstract or inflated one (a linter enforces most of this list; the context-dependent entries need human judgment).
 - Straight quotes only in source files; never curly quotes or typographic primes.
 - No "not just X, it's Y" or "not only X, but Y" parallelism.
   State what the thing is.

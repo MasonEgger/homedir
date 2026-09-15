@@ -14,11 +14,14 @@
 # (FirstPerson, FirstUse, Latin, OxfordComma, Passive, Spaces, We, plus
 # MasonTechnical.SentenceLength). Run `vale sync` once against this rendered
 # config so Std actually lands on StylesPath below: styles/Std/ is gitignored
-# in vale-styles and never vendored, so nothing ships it for you, and syncing
-# from the vale-styles repo does not populate this separate StylesPath.
-# MasonTechnical.SentenceLength only exists as a Std extends child once
-# vale-styles' std-rebuild PR merges to main; until then it runs on its own
-# default, same as the other seven extends children above.
+# as of the std-rebuild branch and never vendored, so nothing ships it for
+# you, and syncing from the vale-styles repo does not populate this separate
+# StylesPath.
+# MasonTechnical.SentenceLength ships with vale-styles' std-rebuild PR; on a
+# main checkout the rule does not exist yet, so Vale silently ignores the
+# [max] = 25 line below until the PR merges. The other seven rules above
+# already exist hand-rolled on main and run on their own defaults until the
+# merge converts them to Std extends children.
 
 StylesPath = {{ target_home }}/Code/MasonEgger/vale-styles/styles
 Packages = Std
