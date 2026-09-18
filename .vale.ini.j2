@@ -8,8 +8,23 @@
 # Per-project overrides (turning a rule off, raising/lowering a severity, or
 # adding a project-only glob) belong in that project's own .vale.ini after
 # copying the template.
+#
+# Packages = Std pulls in Vale's published Std library. Several MasonBase/
+# MasonTechnical rules are rule-to-rule `extends:` children of a Std rule
+# (FirstPerson, FirstUse, Latin, OxfordComma, Passive, Spaces, We, plus
+# MasonTechnical.SentenceLength). Run `vale sync` once against this rendered
+# config so Std actually lands on StylesPath below: styles/Std/ is gitignored
+# as of the std-rebuild branch and never vendored, so nothing ships it for
+# you, and syncing from the vale-styles repo does not populate this separate
+# StylesPath.
+# All eight rules above already exist hand-rolled on vale-styles main and
+# run on their own defaults; the std-rebuild PR converts them to Std extends
+# children. The MasonTechnical.SentenceLength[max] = 25 line below is
+# honored either way (verified on Vale 3.21 against a main checkout); it
+# makes the per-type cap explicit rather than inherited.
 
 StylesPath = {{ target_home }}/Code/MasonEgger/vale-styles/styles
+Packages = Std
 
 # error | warning | suggestion
 MinAlertLevel = suggestion
@@ -57,6 +72,7 @@ TokenIgnores = (\x60[^\n\x60]+\x60)
 [{tutorials,tutorial,technical,how-to,howto}/**/*.{md,rst}]
 BasedOnStyles = MasonBase, MasonTechnical
 MasonBase.We = suggestion
+MasonTechnical.SentenceLength[max] = 25
 BlockIgnores = (?s) *(```.*?```)
 TokenIgnores = (\x60[^\n\x60]+\x60)
 
