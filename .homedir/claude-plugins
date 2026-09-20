@@ -13,9 +13,11 @@ import re
 import subprocess
 
 FRESH_INSTALL_RE = re.compile(r"already installed", re.IGNORECASE)
-# `claude plugin list` renders each plugin as "❯ name@marketplace" then "Version: X".
+# `claude plugin list` renders each install record as "❯ name@marketplace"
+# followed by "Version: X" and "Scope: user|project|local" lines.
 LIST_NAME_RE = re.compile(r"❯\s+(\S+)")
 LIST_VERSION_RE = re.compile(r"Version:\s*(.+)")
+LIST_SCOPE_RE = re.compile(r"Scope:\s*(\S+)")
 
 MARKETPLACES: list[tuple[str, str]] = [
     # (name, github_repo)
@@ -98,20 +100,63 @@ def ensure_marketplaces() -> bool:
 
 
 def installed_versions() -> dict[str, str]:
-    """Map qualified plugin name to its currently installed version."""
+    """Map qualified plugin name to its user-scope installed version.
+
+    `claude plugin list` prints one record per install, and a plugin can be
+    installed at several scopes at once. Only the user-scope record counts
+    here; a stale project-scope record once shadowed the real version in
+    this report because the old parser kept whichever record came last.
+    """
     result = run_claude(["plugin", "list"])
     versions: dict[str, str] = {}
     current: str | None = None
+    version: str | None = None
+    for line in f"{result.stdout}\n{result.stderr}".splitlines():
+        name_match = LIST_NAME_RE.search(line)
+        if name_match:
+            current, version = name_match.group(1), None
+            continue
+        version_match = LIST_VERSION_RE.search(line)
+        if version_match and current:
+            version = version_match.group(1).strip()
+            continue
+        scope_match = LIST_SCOPE_RE.search(line)
+        if scope_match and current:
+            if scope_match.group(1) == "user" and version:
+                versions[current] = version
+            current, version = None, None
+    return versions
+
+
+def audit_scopes() -> None:
+    """Warn about non-user-scope install records.
+
+    Everything is meant to be installed once, globally, at user scope.
+    Project- and local-scope records come from sessions that ran
+    `claude plugin install` with a narrower scope (or from a checked-in
+    settings file enabling plugins per-project); they pin stale versions
+    and shadow nothing useful. Surface them so they get removed instead
+    of rotting silently, the way twelve of them did between 2026-08-23
+    and 2026-09-20.
+    """
+    result = run_claude(["plugin", "list"])
+    current: str | None = None
+    strays: list[tuple[str, str]] = []
     for line in f"{result.stdout}\n{result.stderr}".splitlines():
         name_match = LIST_NAME_RE.search(line)
         if name_match:
             current = name_match.group(1)
             continue
-        version_match = LIST_VERSION_RE.search(line)
-        if version_match and current:
-            versions[current] = version_match.group(1).strip()
+        scope_match = LIST_SCOPE_RE.search(line)
+        if scope_match and current and scope_match.group(1) != "user":
+            strays.append((current, scope_match.group(1)))
             current = None
-    return versions
+    if strays:
+        print("\n⚠️  Non-user-scope installs detected (stale, remove them):")
+        for name, scope in strays:
+            print(f"   {name} at {scope} scope")
+            print(f"   fix: claude plugin uninstall --scope {scope} {name}")
+        print("   (run the uninstall from the project directory that owns the record)")
 
 
 def show_version(version: str | None) -> str:
@@ -155,8 +200,12 @@ def sync_plugins() -> None:
     print("Syncing plugins", end="", flush=True)
     for plugin, marketplace in PLUGINS:
         qualified = f"{plugin}@{marketplace}"
-        # install is idempotent — succeeds even if already installed
-        install_result = run_claude(["plugin", "install", qualified])
+        # install is idempotent; it succeeds even if already installed.
+        # --scope user is explicit so a cwd inside a project can never
+        # create a project-scope install.
+        install_result = run_claude(
+            ["plugin", "install", "--scope", "user", qualified]
+        )
         if install_result.returncode != 0:
             failures[qualified] = (
                 install_result.stderr.strip() or install_result.stdout.strip()
@@ -167,7 +216,9 @@ def sync_plugins() -> None:
         if not FRESH_INSTALL_RE.search(install_output):
             freshly.add(qualified)
         # update to latest version
-        update_result = run_claude(["plugin", "update", qualified])
+        update_result = run_claude(
+            ["plugin", "update", "--scope", "user", qualified]
+        )
         if update_result.returncode != 0:
             failures[qualified] = (
                 "update failed: "
@@ -205,6 +256,7 @@ def main() -> None:
     remove_stale_plugins()
     remove_stale_marketplaces()
     sync_plugins()
+    audit_scopes()
     print("\nRun /reload-plugins in Claude Code to activate changes.")
 
 
