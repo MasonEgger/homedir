@@ -85,6 +85,31 @@ fi
 export GPG_TTY=$(tty)
 gpgconf --launch gpg-agent
 
+# Reuse one ssh-agent across shells instead of spawning one per session.
+# macOS ships a launchd-managed agent whose socket is already live, so this
+# block does nothing there; on Linux/WSL it persists the agent env and only
+# starts a new agent when no reachable one exists.
+_ssh_agent_env="$HOME/.ssh/agent.env"
+
+_ssh_agent_alive() {
+    [[ -n "$SSH_AUTH_SOCK" ]] || return 1
+    ssh-add -l >/dev/null 2>&1
+    [[ $? -ne 2 ]]  # exit 2 means the socket is dead; 0 and 1 are a live agent
+}
+
+if ! _ssh_agent_alive; then
+    [[ -f "$_ssh_agent_env" ]] && source "$_ssh_agent_env" >/dev/null
+    if ! _ssh_agent_alive; then
+        mkdir -p "$HOME/.ssh"
+        (umask 077; ssh-agent -s > "$_ssh_agent_env")
+        source "$_ssh_agent_env" >/dev/null
+    fi
+fi
+# Load the default key once; skip when the agent already holds one
+ssh-add -l >/dev/null 2>&1 || ssh-add 2>/dev/null
+unfunction _ssh_agent_alive
+unset _ssh_agent_env
+
 # macOS-specific configuration
 if [[ "$(uname)" == "Darwin" ]]; then
     # Use Tailscale.app CLI instead of brew-installed tailscale
