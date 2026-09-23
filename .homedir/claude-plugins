@@ -9,6 +9,7 @@
 
 """Install or update Claude Code plugins from multiple marketplaces."""
 
+import platform
 import re
 import subprocess
 
@@ -47,6 +48,21 @@ PLUGINS: list[tuple[str, str]] = [
     ("slidev", "slidev-plugins"),
     ("temporal", "temporal-marketplace"),
 ]
+
+DEV_ONLY_PLUGINS: list[tuple[str, str]] = [
+    # Guarded plugins that must never land on the work machine. The
+    # metacognition plugin is the private taste-extraction factory; for now
+    # "is this a Mac" is the work-machine test, so Darwin skips the install
+    # and removes any stray copy. Revisit the test if a Mac ever becomes a
+    # dev box.
+    ("metacognition", "mmegger-private-plugins"),
+]
+
+
+def is_work_machine() -> bool:
+    """Return True on the work machine (currently: any Mac)."""
+    return platform.system() == "Darwin"
+
 
 STALE_PLUGINS: list[str] = [
     # Superseded installs to remove if present. bpe re-keyed when its
@@ -177,11 +193,23 @@ def remove_stale_plugins() -> None:
 
     Runs before sync so a plugin migrating between marketplaces (same plugin
     name, new home) never has two installs competing for the same commands.
+    On the work machine the dev-only plugins join the removal pass, so a
+    guarded plugin that ever leaks onto it is cleaned up on the next sync.
     """
-    for qualified in STALE_PLUGINS:
+    stale = list(STALE_PLUGINS)
+    if is_work_machine():
+        stale.extend(f"{plugin}@{marketplace}" for plugin, marketplace in DEV_ONLY_PLUGINS)
+    for qualified in stale:
         result = run_claude(["plugin", "uninstall", qualified])
         if result.returncode == 0:
-            print(f"🗑️ {qualified}: uninstalled (superseded)")
+            print(f"🗑️ {qualified}: uninstalled (superseded or guarded)")
+
+
+def active_plugins() -> list[tuple[str, str]]:
+    """The plugin set for this machine: everything, minus guarded on work."""
+    if is_work_machine():
+        return PLUGINS
+    return PLUGINS + DEV_ONLY_PLUGINS
 
 
 def sync_plugins() -> None:
@@ -193,12 +221,13 @@ def sync_plugins() -> None:
     on every run and always print "refreshed from source", which would otherwise
     read as a spurious update on every invocation.
     """
+    plugins = active_plugins()
     before = installed_versions()
     failures: dict[str, str] = {}
     freshly: set[str] = set()
 
     print("Syncing plugins", end="", flush=True)
-    for plugin, marketplace in PLUGINS:
+    for plugin, marketplace in plugins:
         qualified = f"{plugin}@{marketplace}"
         # install is idempotent; it succeeds even if already installed.
         # --scope user is explicit so a cwd inside a project can never
@@ -230,7 +259,7 @@ def sync_plugins() -> None:
     print()
 
     after = installed_versions()
-    for plugin, marketplace in PLUGINS:
+    for plugin, marketplace in plugins:
         qualified = f"{plugin}@{marketplace}"
         label = f"{plugin} ({marketplace})"
         old, new = before.get(qualified), after.get(qualified)
@@ -244,6 +273,9 @@ def sync_plugins() -> None:
             print(f"✓ {label}: up to date {new}")
         else:
             print(f"🔄 {label}: refreshed from source (unversioned)")
+    if is_work_machine():
+        for plugin, marketplace in DEV_ONLY_PLUGINS:
+            print(f"⏭️ {plugin} ({marketplace}): skipped (guarded, dev-box only)")
 
 
 def main() -> None:
