@@ -198,7 +198,9 @@ def remove_stale_plugins() -> None:
     """
     stale = list(STALE_PLUGINS)
     if is_work_machine():
-        stale.extend(f"{plugin}@{marketplace}" for plugin, marketplace in DEV_ONLY_PLUGINS)
+        stale.extend(
+            f"{plugin}@{marketplace}" for plugin, marketplace in DEV_ONLY_PLUGINS
+        )
     for qualified in stale:
         result = run_claude(["plugin", "uninstall", qualified])
         if result.returncode == 0:
@@ -232,9 +234,7 @@ def sync_plugins() -> None:
         # install is idempotent; it succeeds even if already installed.
         # --scope user is explicit so a cwd inside a project can never
         # create a project-scope install.
-        install_result = run_claude(
-            ["plugin", "install", "--scope", "user", qualified]
-        )
+        install_result = run_claude(["plugin", "install", "--scope", "user", qualified])
         if install_result.returncode != 0:
             failures[qualified] = (
                 install_result.stderr.strip() or install_result.stdout.strip()
@@ -245,9 +245,7 @@ def sync_plugins() -> None:
         if not FRESH_INSTALL_RE.search(install_output):
             freshly.add(qualified)
         # update to latest version
-        update_result = run_claude(
-            ["plugin", "update", "--scope", "user", qualified]
-        )
+        update_result = run_claude(["plugin", "update", "--scope", "user", qualified])
         if update_result.returncode != 0:
             failures[qualified] = (
                 "update failed: "

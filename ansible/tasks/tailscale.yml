@@ -1,12 +1,23 @@
 ---
 # Tailscale Installation/Update Tasks
 
-# macOS - install or update via Homebrew cask (full GUI app)
+# macOS - install or update via Homebrew cask (full GUI app), unless the Mac
+# App Store copy is installed. The App Store keeps that copy updated, and the
+# cask would try (via sudo) to install a second copy over it.
+- name: Check for a Mac App Store copy of Tailscale (macOS)
+  ansible.builtin.stat:
+    path: /Applications/Tailscale.app/Contents/_MASReceipt
+  register: tailscale_mas_receipt
+  when: ansible_facts['os_family'] == "Darwin"
+  tags: tailscale
+
 - name: Install/update Tailscale via Homebrew cask (macOS)
   community.general.homebrew_cask:
     name: tailscale
     state: latest
-  when: ansible_facts['os_family'] == "Darwin"
+  when:
+    - ansible_facts['os_family'] == "Darwin"
+    - not (tailscale_mas_receipt.stat.exists | default(false))
   tags: tailscale
 
 # Debian/Ubuntu - use official install script for repo setup, then apt for updates
