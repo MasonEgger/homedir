@@ -4,6 +4,7 @@
 <!-- 10 most recent lessons, newest first -->
 
 - On macOS a plain `ssh-add` ignores the Keychain and prompts for a passphrase even when one is stored; pass `--apple-use-keychain` (no file argument loads the default keys). For a throwaway test agent use `ssh-agent -s` with its default socket: `-a` under the long session scratchpad path exceeds the 104-byte Unix socket limit (2026-09-28)
+- This repo's `.claude/settings.json` is both the ansible baseline and the live project settings when Claude runs from `~/homedir`, so a `model` key there overrides `/model` on restart in this repo even though claude.yml preserves `model` as machine-local on deploy (2026-09-28)
 - A rule file meant to be cold-start-applicable (an always-on generation-shaping tier, not a reference) cannot point at a scanner in place of stating its content; the scanner only runs after text already exists. When a short banned-vocabulary list must ship inline in such a rule AND stay enforced by `prose-scrub.py`, quote the list in the rule and add the rule file's path to the scanner's vocabulary allowlist, the same pattern already used for the voice-profile files and `ai-tells.md` (2026-09-15)
 - `scripts/prose-scrub.py`'s dash and curly-quote codepoint rules have no escape mechanism, not even inside backticks or fenced code blocks (`applies_in_code_fences=True`). A rule's own documentation cannot show the banned glyph as a literal example; name the character by word only ("em-dash", not the glyph itself) (2026-09-15)
 - Provisioning order: create the user account + SSH as early as dependencies allow, and run flaky network installs (tailscale `curl|sh`, obsidian) AFTER, so their failure can't leave a box with no login. `curl|sh` daemons are order-independent from user creation; put them last (2026-08-30)
@@ -12,7 +13,6 @@
 - Obsidian's GitHub `releases/latest` is often mobile-only (APK, no AppImage); the reliable desktop version pointer is `desktop-releases.json`'s `latestVersion` (its `downloadUrl` is the .asar.gz, not the AppImage). And `ansible.builtin.git` defaults `recursive: yes` — cloning nvm pulls an SSH-only test submodule that fails on keyless boxes; set `recursive: false` (2026-08-30)
 - sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
 - `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
-- After `chage -d 0`, `su - USER -c` fails from scripts ("Authentication token manipulation error") because `/etc/pam.d/su` enforces password expiry. `runuser -l USER -s /bin/bash -c` has no PAM account stack and works; use it for all target-user shell tasks (2026-08-23)
 ## Categories
 
 ### Vale / Prose Linting
@@ -55,6 +55,7 @@
 - Ansible `git:` tasks cloning a private repo over `https://github.com/...` prompt for GitHub username/password (API password auth died in 2021, so it never succeeds). Use the SSH remote `git@github.com:owner/repo.git`. Caveat: SSH needs a registered key, so it fails on fresh `mmegger` users who have none (2026-06-29)
 
 ### Claude Code Behavior
+- This repo's `.claude/settings.json` is both the ansible baseline and the live project settings when Claude runs from `~/homedir`, so a `model` key there overrides `/model` on restart in this repo even though claude.yml preserves `model` as machine-local on deploy (2026-09-28)
 - Auto-mode classifier hard-blocks edits to `.claude/rules/*` and similar agent-config files as "self-modification" even on explicit user request. Surface via AskUserQuestion instead of silently retrying (2026-05-24)
 
 ### Plugin Development
