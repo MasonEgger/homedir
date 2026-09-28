@@ -3,6 +3,7 @@
 ## Recent
 <!-- 10 most recent lessons, newest first -->
 
+- A Homebrew cask task with `state: latest` tries to install over an App Store copy of the same app (and needs sudo for pkg-based casks, which fails with no TTY). Check `/Applications/<App>.app/Contents/_MASReceipt` and skip the cask when it exists (2026-09-28)
 - On macOS a plain `ssh-add` ignores the Keychain and prompts for a passphrase even when one is stored; pass `--apple-use-keychain` (no file argument loads the default keys). For a throwaway test agent use `ssh-agent -s` with its default socket: `-a` under the long session scratchpad path exceeds the 104-byte Unix socket limit (2026-09-28)
 - This repo's `.claude/settings.json` is both the ansible baseline and the live project settings when Claude runs from `~/homedir`, so a `model` key there overrides `/model` on restart in this repo even though claude.yml preserves `model` as machine-local on deploy (2026-09-28)
 - A rule file meant to be cold-start-applicable (an always-on generation-shaping tier, not a reference) cannot point at a scanner in place of stating its content; the scanner only runs after text already exists. When a short banned-vocabulary list must ship inline in such a rule AND stay enforced by `prose-scrub.py`, quote the list in the rule and add the rule file's path to the scanner's vocabulary allowlist, the same pattern already used for the voice-profile files and `ai-tells.md` (2026-09-15)
@@ -12,7 +13,6 @@
 - Never disable `PasswordAuthentication` without asserting the account has >=1 authorized_key; best-effort key sources (root copy, sshid.io) can both miss and lock you out. Gate the hardening on a `grep -c '^ssh-' authorized_keys` count (2026-08-30)
 - Obsidian's GitHub `releases/latest` is often mobile-only (APK, no AppImage); the reliable desktop version pointer is `desktop-releases.json`'s `latestVersion` (its `downloadUrl` is the .asar.gz, not the AppImage). And `ansible.builtin.git` defaults `recursive: yes` — cloning nvm pulls an SSH-only test submodule that fails on keyless boxes; set `recursive: false` (2026-08-30)
 - sshid.io serves an HTML SPA index to a default request (CloudFront); to fetch raw keys the request MUST send `Accept: text/plain` (curl works only by luck of its Accept). Ansible's `uri` module got HTML and matched zero `^ssh-` lines while still reporting ok. Assert on parsed result (key count), not task success, for content-negotiated endpoints (2026-08-30)
-- `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 ## Categories
 
 ### Vale / Prose Linting
@@ -24,6 +24,7 @@
 - For LLM-derived banned-phrase Vale rules, prefer `level: warning` over `level: error` until the rule has been run against a corpus of Mason's own writing. Errors block CI; false positives on publishing-tone rules are common (e.g. "in this section, we configure X" is honest signposting, not a tell) (2026-06-16)
 
 ### Tooling
+- A Homebrew cask task with `state: latest` tries to install over an App Store copy of the same app (and needs sudo for pkg-based casks, which fails with no TTY). Check `/Applications/<App>.app/Contents/_MASReceipt` and skip the cask when it exists (2026-09-28)
 - On macOS a plain `ssh-add` ignores the Keychain and prompts for a passphrase even when one is stored; pass `--apple-use-keychain` (no file argument loads the default keys). For a throwaway test agent use `ssh-agent -s` with its default socket: `-a` under the long session scratchpad path exceeds the 104-byte Unix socket limit (2026-09-28)
 - `ansible-playbook --syntax-check` does not parse files pulled in via include_tasks, so YAML errors there slip through; ansible-lint on the task file catches them. A Jinja expression containing `': '` (colon-space) must be quoted or folded (`>-`) or the plain scalar breaks (2026-08-23)
 - `nvm which --lts` is invalid in nvm 0.40.x; the installed-LTS check is `nvm which "lts/*"`. And the Claude Code installer symlinks `~/.local/bin/claude`, not `~/.claude/local/bin/claude`; guard on the former (2026-08-23)
