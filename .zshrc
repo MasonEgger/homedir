@@ -105,8 +105,16 @@ if ! _ssh_agent_alive; then
         source "$_ssh_agent_env" >/dev/null
     fi
 fi
-# Load the default key once; skip when the agent already holds one
-ssh-add -l >/dev/null 2>&1 || ssh-add 2>/dev/null
+# Load the default key once; skip when the agent already holds one.
+# On macOS, read the passphrase from the Keychain so the first shell after a
+# reboot doesn't prompt for it.
+if ! ssh-add -l >/dev/null 2>&1; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+        ssh-add -q --apple-use-keychain 2>/dev/null
+    else
+        ssh-add -q 2>/dev/null
+    fi
+fi
 unfunction _ssh_agent_alive
 unset _ssh_agent_env
 
