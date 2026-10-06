@@ -25,6 +25,7 @@ MARKETPLACES: list[tuple[str, str]] = [
     ("anthropic-agent-skills", "anthropics/skills"),
     ("claude-plugins-official", "anthropics/claude-plugins-official"),
     ("bpe", "MasonEgger/bpe-claude-code-plugin"),
+    ("metacognition-plugin", "MasonEgger/metacognition-plugin"),
     ("mmegger-private-plugins", "MasonEgger/claude-code-plugin-private"),
     ("obsidian-skills", "kepano/obsidian-skills"),
     ("slidev-plugins", "slidevjs/slidev"),
@@ -37,6 +38,7 @@ PLUGINS: list[tuple[str, str]] = [
     ("plugin-dev", "claude-plugins-official"),
     ("skill-creator", "claude-plugins-official"),
     ("bpe", "bpe"),
+    ("metacognition", "metacognition-plugin"),
     ("content-design", "mmegger-private-plugins"),
     ("health", "mmegger-private-plugins"),
     ("indie", "mmegger-private-plugins"),
@@ -50,12 +52,11 @@ PLUGINS: list[tuple[str, str]] = [
 ]
 
 DEV_ONLY_PLUGINS: list[tuple[str, str]] = [
-    # Guarded plugins that must never land on the work machine. The
-    # metacognition plugin is the private taste-extraction factory; for now
-    # "is this a Mac" is the work-machine test, so Darwin skips the install
-    # and removes any stray copy. Revisit the test if a Mac ever becomes a
-    # dev box.
-    ("metacognition", "mmegger-private-plugins"),
+    # Guarded plugins that must never land on the work machine ("is this a
+    # Mac" is the work-machine test; Darwin skips the install and removes
+    # any stray copy). Empty since metacognition went public (2026-10-05)
+    # and moved to its own marketplace; the machinery stays for the next
+    # private experiment.
 ]
 
 
@@ -70,6 +71,10 @@ STALE_PLUGINS: list[str] = [
     # moved to the private marketplace (v2.0.0, 2026-07); productivity and
     # writing left the public repo long ago but were never uninstalled.
     "bpe@mmegger-plugins",
+    # metacognition moved to the public MasonEgger/metacognition-plugin
+    # marketplace (2026-10-05); the private-marketplace install goes so the
+    # two homes never compete for the same commands.
+    "metacognition@mmegger-private-plugins",
     "python@mmegger-plugins",
     "productivity@mmegger-plugins",
     "writing@mmegger-plugins",
