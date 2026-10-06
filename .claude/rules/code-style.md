@@ -25,9 +25,16 @@ paths:
   - "**/conftest.py"
 ---
 
+## Skill Precedence
+
+If a skill claims the domain, use the skill; these rules are the fallback until every domain has one.
+Python work loads the `python` skill via `python.md` in this directory, and that skill's files are the source of truth for all Python standards, the compiled taste profile included.
+Never restate a skill-owned rule here; a restated rule drifts (the dead CLI-TDD exemption survived in this file after the skill removed it).
+The cross-language principles below apply wherever no skill overrides them.
+
 ## Writing Code
 
-- Follow TDD (tests first, minimal code to pass, refactor); the python skill's `tdd-workflow.md` is canonical for scope (mandatory for applications and libraries, exempt for CLI scripts and one-offs).
+- Follow TDD (tests first, minimal code to pass, refactor); for scope, the python skill's `tdd-workflow.md` is canonical and is not restated here.
 - Prefer simple, clean, maintainable solutions over clever ones. Readability is primary.
 - Realize that sometimes the best solution is to remove, not to add.
 - Always adhere to best practices for the given language/tool you are writing.
